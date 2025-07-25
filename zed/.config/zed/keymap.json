@@ -1,0 +1,81 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: Open Default Keymap`
+// from the command palette.
+[
+  {
+    "context": "Editor && !menu",
+    "bindings": {
+      "ctrl-c": "editor::Copy", // vim default: return to normal mode
+      "ctrl-x": "editor::Cut", // vim default: decrement
+      "ctrl-v": "editor::Paste", // vim default: visual block mode
+      "ctrl-y": "editor::Undo", // vim default: line up
+      "ctrl-o": "workspace::Open", // vim default: go back
+      "ctrl-a": "editor::SelectAll" // vim default: increment
+    }
+  },
+  {
+    "context": "Editor && VimControl && !VimWaiting && !menu",
+    "bindings": {
+      "space g b": "git::Blame",
+      "space f f": "file_finder::Toggle",
+      "space e b": "workspace::ToggleBottomDock",
+      "space e f": "project_panel::ToggleFocus",
+      "space e g": "git_panel::ToggleFocus",
+      // Pane splitting
+      "space p l": "pane::SplitLeft",
+      "space p r": "pane::SplitRight",
+      "space p t": "pane::SplitUp",
+      "space p b": "pane::SplitDown",
+      "space p c": "pane::JoinAll",
+      // Pane movement
+      "ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-j": "workspace::ActivatePaneDown",
+      "ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-l": "workspace::ActivatePaneRight",
+      // Tab managment
+      "space t k": "pane::CloseActiveItem"
+    }
+  },
+  {
+    "context": "Editor && vim_mode == visual && !VimWaiting && !VimObject",
+    "bindings": {
+      "shift-j": "editor::MoveLineDown",
+      "shift-k": "editor::MoveLineUp"
+    }
+  },
+  {
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "a": "project_panel::NewFile",
+      "A": "project_panel::NewDirectory",
+      "r": "project_panel::Rename",
+      "d": "project_panel::Delete",
+      "x": "project_panel::Cut",
+      "c": "project_panel::Copy",
+      "p": "project_panel::Paste",
+      // Pane movement
+      "ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-j": "workspace::ActivatePaneDown",
+      "ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-l": "workspace::ActivatePaneRight"
+    }
+  },
+  {
+    "context": "!menu || (ProjectPanel && not_editing)",
+    "bindings": {
+      "ctrl-n": "workspace::ToggleLeftDock"
+    }
+  },
+  {
+    "context": "Terminal",
+    "bindings": {
+      "alt-z": "workspace::ToggleBottomDock",
+      "ctrl-q": null,
+      "ctrl-w": "pane::CloseActiveItem"
+    }
+  }
+]

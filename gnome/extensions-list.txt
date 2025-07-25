@@ -1,0 +1,14 @@
+space-bar@luchrioh
+extension-list@tu.berry
+just-perfection-desktop@just-perfection
+clipboard-indicator@tudmotu.com
+right-click-next@derVedro
+add-to-desktop@tommimon.github.com
+CrazyInternetSpeedMeter@larryw3i_at_163.com
+window-desaturation@mkhl.codeberg.page
+blur-my-shell@aunetx
+tactile@lundal.io
+ding@rastersoft.com
+tiling-assistant@ubuntu.com
+ubuntu-appindicators@ubuntu.com
+ubuntu-dock@ubuntu.com
