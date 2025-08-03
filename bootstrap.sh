@@ -31,8 +31,12 @@ check_and_install() {
 
 # Required tools
 check_and_install stow stow
-check_and_install dconf dconf
 check_and_install wget wget
+
+# Only install dconf if GNOME desktop environment is detected
+if [[ "$XDG_CURRENT_DESKTOP" == "GNOME" || "$DESKTOP_SESSION" == "gnome" ]]; then
+    check_and_install dconf dconf
+fi
 
 echo "==> Bootstrapping dotfiles with GNU Stow..."
 cd ~/dotfiles

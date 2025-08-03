@@ -32,4 +32,3 @@ echo "==> Reloading GNOME Shell..."
 echo "Manual step: Press ALT+F2, type 'r', and press Enter (X11 only). For Wayland, log out and back in."
 
 echo "==> Done!"
-

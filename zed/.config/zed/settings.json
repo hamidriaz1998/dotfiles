@@ -8,7 +8,7 @@
 // from the command palette
 {
   // File syntax highlighting
-  "show_edit_predictions": false,
+  "show_edit_predictions": true,
   "edit_predictions": {
     "disabled_globs": [],
     "mode": "eager"
@@ -47,6 +47,9 @@
   },
   "soft_wrap": "editor_width",
   "languages": {
+    "Markdown": {
+      "show_edit_predictions": true
+    },
     "Go": {
       "show_edit_predictions": true
     },
@@ -66,6 +69,7 @@
     //   "language_servers": ["ruff", "pyright"]
     // },
     "Python": {
+      "show_edit_predictions": false,
       "language_servers": ["ruff", "pyright"],
       "format_on_save": "on",
       "formatter": [
@@ -131,7 +135,7 @@
     "play_sound_when_agent_done": true,
     "inline_assistant_model": {
       "provider": "zed.dev",
-      "model": "claude-sonnet-4-latest"
+      "model": "claude-sonnet-4"
     },
     "always_allow_tool_actions": true,
     "profiles": {
@@ -161,13 +165,13 @@
     "metrics": false
   },
   "vim_mode": true,
-  "ui_font_size": 15,
-  "buffer_font_size": 14.0,
+  "ui_font_size": 14,
+  "buffer_font_size": 13.0,
   "buffer_font_family": "JetBrainsMono Nerd Font",
   "theme": {
     "mode": "system",
     "light": "Catppuccin Latte (Blur)",
-    "dark": "Tokyo Night Storm"
+    "dark": "One Dark Pro"
   },
   "tabs": {
     "git_status": true,

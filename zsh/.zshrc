@@ -136,14 +136,8 @@ export PATH="/home/linuxbrew/.linuxbrew/opt/postgresql@16/bin:$PATH"
 alias download="wget --mirror --convert-links --adjust-extension --page-requisites --no-parent "
 source <(fzf --zsh)
 alias fzf="fzf --preview='bat --color=always {}'"
-export DOTNET_ROOT=/usr/share/dotnet
-export PATH=$PATH:$DOTNET_ROOT:$DOTNET_ROOT/tools
 
 
-# Load Angular CLI autocompletion.
-#source <(ng completion script)
-export DOTNET_CLI_TELEMETRY_OPTOUT=1
-alias nghttp='ngrok http --domain=dassie-sharp-kindly.ngrok-free.app'
 export NVM_DIR="$HOME/.nvm"
   [ -s "/home/linuxbrew/.linuxbrew/opt/nvm/nvm.sh" ] && \. "/home/linuxbrew/.linuxbrew/opt/nvm/nvm.sh"  # This loads nvm
   [ -s "/home/linuxbrew/.linuxbrew/opt/nvm/etc/bash_completion.d/nvm" ] && \. "/home/linuxbrew/.linuxbrew/opt/nvm/etc/bash_completion.d/nvm"  # This loads nvm bash_completion
@@ -386,3 +380,5 @@ alias flatpak='flatpak --installation=external'
 # bun
 export BUN_INSTALL="$HOME/.bun"
 export PATH="$BUN_INSTALL/bin:$PATH"
+
+alias ncdu='ncdu --color dark'
