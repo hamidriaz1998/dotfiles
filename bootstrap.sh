@@ -32,10 +32,20 @@ check_and_install() {
 # Required tools
 check_and_install stow stow
 check_and_install wget wget
+check_and_install zsh zsh
 
 # Only install dconf if GNOME desktop environment is detected
 if [[ "$XDG_CURRENT_DESKTOP" == "GNOME" || "$DESKTOP_SESSION" == "gnome" ]]; then
     check_and_install dconf dconf
+fi
+
+# Install oh-my-zsh if not already installed
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    echo "⚙ oh-my-zsh not found — installing..."
+    sh -c "$(wget -O- https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+    echo "✔ oh-my-zsh installed."
+else
+    echo "✔ oh-my-zsh found."
 fi
 
 echo "==> Bootstrapping dotfiles with GNU Stow..."
