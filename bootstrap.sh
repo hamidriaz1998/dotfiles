@@ -45,8 +45,12 @@ for pkg in */ ; do
   fi
 done
 
-echo "==> Running GNOME setup..."
-bash ~/dotfiles/gnome-setup.sh
+# Only run GNOME setup if current desktop env is GNOME
+if [[ "$XDG_CURRENT_DESKTOP" == "GNOME" || "$DESKTOP_SESSION" == "gnome" ]]; then
+    echo "==> Running GNOME setup..."
+    bash ~/dotfiles/gnome-setup.sh
+else
+    echo "==> GNOME desktop environment not detected. Skipping GNOME setup."
+fi
 
 echo "==> All done! ✅ Your dotfiles and GNOME config are ready."
-
