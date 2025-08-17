@@ -25,6 +25,7 @@
       "space e b": "workspace::ToggleBottomDock",
       "space e f": "project_panel::ToggleFocus",
       "space e g": "git_panel::ToggleFocus",
+      "space e d": "debugger::Start",
       // Pane splitting
       "space p l": "pane::SplitLeft",
       "space p r": "pane::SplitRight",

@@ -26,21 +26,20 @@
   },
   "auto_install_extensions": {
     "html": true,
+    "toml": true,
     "basher": true,
     "emmet": true,
     "make": true,
     "sql": true,
-    "blackula": true,
     "csv": true,
     "env": true,
-    "java": true,
     "ruff": true,
     "svelte": true,
     "deno": true,
     "git-firefly": true,
     "rainbow-csv": true,
     "scss": true,
-    "tokyo-night": true
+    "catppuccin-icons": true
   },
   "minimap": {
     "show": "always"
@@ -69,7 +68,7 @@
     //   "language_servers": ["ruff", "pyright"]
     // },
     "Python": {
-      "show_edit_predictions": false,
+      "show_edit_predictions": true,
       "language_servers": ["ruff", "pyright"],
       "format_on_save": "on",
       "formatter": [
@@ -97,10 +96,10 @@
       },
       "format_on_save": "on",
       "formatter": "auto",
-      "language_servers": ["deno", "typescript-language-server"]
+      "language_servers": ["typescript-language-server", "deno"]
     },
     "JavaScript": {
-      "show_edit_predictions": false,
+      "show_edit_predictions": true,
       "inlay_hints": {
         "show_parameter_hints": false,
         "show_type_hints": false
@@ -113,7 +112,7 @@
       "EDITOR": "zed --wait"
     },
     // "cursor_shape":"bar",
-    "font_family": "JetBrainsMono Nerd Font"
+    "font_family": "CaskaydiaMono Nerd Font"
   },
   "inlay_hints": {
     "enabled": true
@@ -134,8 +133,8 @@
   "agent": {
     "play_sound_when_agent_done": true,
     "inline_assistant_model": {
-      "provider": "zed.dev",
-      "model": "claude-sonnet-4"
+      "provider": "copilot_chat",
+      "model": "gpt-4o"
     },
     "always_allow_tool_actions": true,
     "profiles": {
@@ -155,7 +154,7 @@
     },
     "default_profile": "write",
     "default_model": {
-      "provider": "zed.dev",
+      "provider": "copilot_chat",
       "model": "claude-sonnet-4"
     },
     "dock": "right"
@@ -165,14 +164,10 @@
     "metrics": false
   },
   "vim_mode": true,
-  "ui_font_size": 14,
-  "buffer_font_size": 13.0,
-  "buffer_font_family": "JetBrainsMono Nerd Font",
-  "theme": {
-    "mode": "system",
-    "light": "Catppuccin Latte (Blur)",
-    "dark": "One Dark Pro"
-  },
+  "ui_font_size": 13,
+  "buffer_font_size": 12.0,
+  "buffer_font_family": "CaskaydiaMono Nerd Font",
+  "theme": "Omarchy Current",
   "tabs": {
     "git_status": true,
     "file_icons": true,
