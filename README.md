@@ -30,13 +30,13 @@ To use these dotfiles on your system, follow these steps:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/hamidriaz1999/dotfiles.git ~/dotfiles
+   git clone https://github.com/hamidriaz1999/dotfiles.git ~/.dotfiles
    ```
 
 2. Navigate to the dotfiles directory:
 
    ```bash
-   cd ~/dotfiles
+   cd ~/.dotfiles
    ```
 
 3. Run the bootstrap script to set up your environment:
