@@ -29,6 +29,33 @@ check_and_install() {
     fi
 }
 
+# Function to install eza (modern ls replacement)
+install_eza() {
+    if ! command -v eza &>/dev/null; then
+        gum spin --spinner dot --title "Installing eza (modern ls replacement)..." -- sh -c '
+            if [ -f /etc/debian_version ]; then
+                sudo apt update && sudo apt install -y eza
+            elif [ -f /etc/fedora-release ]; then
+                # Fedora
+                sudo dnf install -y eza
+            elif [ -f /etc/arch-release ]; then
+                # Arch Linux
+                sudo pacman -Sy --noconfirm eza
+            else
+                # Fallback: install via cargo if available
+                if command -v cargo &>/dev/null; then
+                    cargo install eza
+                else
+                    echo "⚠ Unable to install eza automatically. Please install manually."
+                fi
+            fi
+        '
+        echo "✔ eza installed."
+    else
+        echo "✔ eza found."
+    fi
+}
+
 # Function to install Starship prompt
 install_starship() {
     if ! command -v starship &>/dev/null; then
@@ -110,7 +137,8 @@ check_and_install curl curl
 # Install Gum first so we can use it for prompts
 install_gum
 
-# Install Starship prompt
+# Install eza and Starship prompt
+install_eza
 install_starship
 
 # Ask user for shell preference using beautiful Gum prompts
