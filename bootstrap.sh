@@ -29,6 +29,17 @@ check_and_install() {
     fi
 }
 
+# Function to install Starship prompt
+install_starship() {
+    if ! command -v starship &>/dev/null; then
+        gum spin --spinner dot --title "Installing Starship prompt..." -- \
+            curl -sS https://starship.rs/install.sh | sh -s -- --yes
+        echo "✔ Starship installed."
+    else
+        echo "✔ Starship found."
+    fi
+}
+
 # Function to install Gum for beautiful prompts
 install_gum() {
     if ! command -v gum &>/dev/null; then
@@ -99,6 +110,9 @@ check_and_install curl curl
 # Install Gum first so we can use it for prompts
 install_gum
 
+# Install Starship prompt
+install_starship
+
 # Ask user for shell preference using beautiful Gum prompts
 choose_shell
 
@@ -167,6 +181,22 @@ if [ "$SELECTED_SHELL" = "fish" ] && [ -f "$HOME/.config/fish/fish_plugins" ]; t
     echo "✔ Fish plugins installed."
 fi
 
+# Show Starship configuration info
+if [ -f "$HOME/.config/starship.toml" ]; then
+    gum style \
+        --foreground 135 --border-foreground 135 --border rounded \
+        --align center --width 60 --margin "1 0" --padding "1 2" \
+        "🌟 Starship Configuration" \
+        "Using custom config: ~/.config/starship.toml" \
+        "Theme: Catppuccin Mocha"
+else
+    gum style \
+        --foreground 135 --border-foreground 135 --border rounded \
+        --align center --width 60 --margin "1 0" --padding "1 2" \
+        "🌟 Starship Configuration" \
+        "Using default Starship configuration"
+fi
+
 # Only run GNOME setup if current desktop env is GNOME
 if [[ "$XDG_CURRENT_DESKTOP" == "GNOME" || "$DESKTOP_SESSION" == "gnome" ]]; then
     gum style \
@@ -204,13 +234,18 @@ fi
 echo ""
 
 # Final success message with styling
-SUCCESS_MSG="All done! ✅ Your dotfiles and $SELECTED_SHELL config are ready."
+SUCCESS_MSG="All done! ✅ Your dotfiles are ready."
 if [ "$SELECTED_SHELL" = "fish" ]; then
-    SHELL_MSG="🐟 Fish shell configured with your dotfiles.\nStart a new terminal session or run 'fish' to begin using it."
+    SHELL_MSG="🐟 Fish shell configured with Fisher and your dotfiles."
 elif [ "$SELECTED_SHELL" = "zsh" ]; then
-    SHELL_MSG="🚀 Zsh configured with oh-my-zsh and your dotfiles.\nStart a new terminal session or run 'zsh' to begin using it."
+    SHELL_MSG="🚀 Zsh configured with oh-my-zsh and your dotfiles."
 fi
+
+STARSHIP_MSG="🌟 Starship prompt with Catppuccin Mocha theme"
+NEXT_STEPS="💡 Start a new terminal session to see your beautiful setup!"
 
 gum join --vertical \
     "$(gum style --foreground 212 --border-foreground 212 --border double --align center --width 70 --padding "1 2" "$SUCCESS_MSG")" \
-    "$(gum style --foreground 99 --align center --width 70 --padding "1 0" "$SHELL_MSG")"
+    "$(gum style --foreground 99 --align center --width 70 --padding "1 0" "$SHELL_MSG")" \
+    "$(gum style --foreground 135 --align center --width 70 --padding "1 0" "$STARSHIP_MSG")" \
+    "$(gum style --foreground 46 --bold --align center --width 70 --padding "1 0" "$NEXT_STEPS")"
