@@ -127,6 +127,62 @@ choose_shell() {
         "✔ Selected shell: $SELECTED_SHELL"
 }
 
+# Function to check if running Hyprland
+is_hyprland() {
+    [[ "$XDG_CURRENT_DESKTOP" == *"Hyprland"* ]] || [[ "$HYPRLAND_INSTANCE_SIGNATURE" != "" ]] || pgrep -x hyprland >/dev/null
+}
+
+# Function to check if device has a touchpad
+has_touchpad() {
+    # Check for touchpad devices in /proc/bus/input/devices
+    grep -i touchpad /proc/bus/input/devices >/dev/null 2>&1 ||
+        # Check for trackpad devices
+        grep -i trackpad /proc/bus/input/devices >/dev/null 2>&1 ||
+        # Check xinput if available
+        (command -v xinput >/dev/null && xinput list | grep -i touchpad >/dev/null 2>&1) ||
+        # Check libinput if available
+        (command -v libinput >/dev/null && libinput list-devices | grep -i touchpad >/dev/null 2>&1)
+}
+
+# Function to install and setup Touchegg
+setup_touchegg() {
+    if ! command -v touchegg &>/dev/null; then
+        echo "⚙ Installing Touchegg..."
+
+        if [ -f /etc/debian_version ]; then
+            sudo apt update && sudo apt install -y touchegg
+        elif [ -f /etc/fedora-release ]; then
+            sudo dnf install -y touchegg
+        elif [ -f /etc/arch-release ]; then
+            sudo pacman -Sy --noconfirm touchegg
+        else
+            echo "⚠ Unsupported distro for Touchegg auto-install. Please install manually."
+            return 1
+        fi
+
+        echo "✔ Touchegg installed."
+    else
+        echo "✔ Touchegg found."
+    fi
+
+    # Enable and start touchegg service
+    if systemctl --user is-enabled touchegg.service >/dev/null 2>&1; then
+        echo "✔ Touchegg service already enabled."
+    else
+        echo "⚙ Enabling Touchegg service..."
+        systemctl --user enable touchegg.service
+        echo "✔ Touchegg service enabled."
+    fi
+
+    if systemctl --user is-active touchegg.service >/dev/null 2>&1; then
+        echo "✔ Touchegg service already running."
+    else
+        echo "⚙ Starting Touchegg service..."
+        systemctl --user start touchegg.service
+        echo "✔ Touchegg service started."
+    fi
+}
+
 echo "==> Checking and installing required tools..."
 
 # Required tools (including Gum for beautiful prompts)
@@ -150,6 +206,14 @@ check_and_install "$SELECTED_SHELL" "$SHELL_PKG"
 # Only install dconf if GNOME desktop environment is detected
 if [[ "$XDG_CURRENT_DESKTOP" == "GNOME" || "$DESKTOP_SESSION" == "gnome" ]]; then
     check_and_install dconf dconf
+fi
+
+# Install Touchegg if device has a touchpad
+if has_touchpad; then
+    gum style --foreground 99 "Touchpad detected - setting up Touchegg for gestures..."
+    setup_touchegg
+else
+    gum style --foreground 240 "No touchpad detected. Skipping Touchegg setup."
 fi
 
 # Install shell-specific tools and frameworks
@@ -186,6 +250,18 @@ for pkg in */; do
     # Skip directories based on shell choice and other conditions
     if [ "$pkg" = "gnome" ]; then
         continue # Handle GNOME separately
+    fi
+
+    # Skip hypr config if not running Hyprland
+    if [ "$pkg" = "hypr" ] && ! is_hyprland; then
+        gum style --foreground 240 "Skipping hypr config (not running Hyprland)..."
+        continue
+    fi
+
+    # Skip touchegg config if no touchpad detected
+    if [ "$pkg" = "touchegg" ] && ! has_touchpad; then
+        gum style --foreground 240 "Skipping touchegg config (no touchpad detected)..."
+        continue
     fi
 
     # Skip the shell config that wasn't selected
@@ -236,6 +312,26 @@ else
     gum style --foreground 240 "GNOME desktop environment not detected. Skipping GNOME setup."
 fi
 
+# Show Hyprland configuration info if running Hyprland
+if is_hyprland && [ -f "$HOME/.config/hypr/hyprland.conf" ]; then
+    gum style \
+        --foreground 99 --border-foreground 99 --border rounded \
+        --align center --width 60 --margin "1 0" --padding "1 2" \
+        "🪟 Hyprland Configuration" \
+        "Config stowed: ~/.config/hypr/" \
+        "Restart Hyprland to apply changes"
+fi
+
+# Show Touchegg configuration info if touchpad detected and config exists
+if has_touchpad && [ -f "$HOME/.config/touchegg/touchegg.conf" ]; then
+    gum style \
+        --foreground 135 --border-foreground 135 --border rounded \
+        --align center --width 60 --margin "1 0" --padding "1 2" \
+        "👆 Touchegg Configuration" \
+        "Gesture config: ~/.config/touchegg/touchegg.conf" \
+        "Service: $(systemctl --user is-active touchegg.service)"
+fi
+
 # Set the selected shell as default if it's not already
 current_shell=$(basename "$SHELL")
 if [ "$current_shell" != "$SELECTED_SHELL" ]; then
@@ -270,10 +366,32 @@ elif [ "$SELECTED_SHELL" = "zsh" ]; then
 fi
 
 STARSHIP_MSG="🌟 Starship prompt with Catppuccin Mocha theme"
+
+# Build additional status messages
+ADDITIONAL_MSGS=()
+if is_hyprland && [ -f "$HOME/.config/hypr/hyprland.conf" ]; then
+    ADDITIONAL_MSGS+=("$(gum style --foreground 99 --align center --width 70 --padding "1 0" "🪟 Hyprland configuration applied")")
+fi
+
+if has_touchpad && [ -f "$HOME/.config/touchegg/touchegg.conf" ]; then
+    ADDITIONAL_MSGS+=("$(gum style --foreground 135 --align center --width 70 --padding "1 0" "👆 Touchegg gestures configured")")
+fi
+
 NEXT_STEPS="💡 Start a new terminal session to see your beautiful setup!"
 
-gum join --vertical \
-    "$(gum style --foreground 212 --border-foreground 212 --border double --align center --width 70 --padding "1 2" "$SUCCESS_MSG")" \
-    "$(gum style --foreground 99 --align center --width 70 --padding "1 0" "$SHELL_MSG")" \
-    "$(gum style --foreground 135 --align center --width 70 --padding "1 0" "$STARSHIP_MSG")" \
-    "$(gum style --foreground 46 --bold --align center --width 70 --padding "1 0" "$NEXT_STEPS")"
+# Build the final message array
+FINAL_MSGS=(
+    "$(gum style --foreground 212 --border-foreground 212 --border double --align center --width 70 --padding "1 2" "$SUCCESS_MSG")"
+    "$(gum style --foreground 99 --align center --width 70 --padding "1 0" "$SHELL_MSG")"
+    "$(gum style --foreground 135 --align center --width 70 --padding "1 0" "$STARSHIP_MSG")"
+)
+
+# Add additional messages if any
+for msg in "${ADDITIONAL_MSGS[@]}"; do
+    FINAL_MSGS+=("$msg")
+done
+
+FINAL_MSGS+=("$(gum style --foreground 46 --bold --align center --width 70 --padding "1 0" "$NEXT_STEPS")")
+
+# Join all messages
+gum join --vertical "${FINAL_MSGS[@]}"

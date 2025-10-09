@@ -42,8 +42,11 @@
 # # Just for example:
 # resize-overlay-duration = 4s 200ms
 
-background-opacity = 0.9
+background-opacity = 0.95
 background-blur = true
-font-family = JetBrainsMono Nerd Font
-font-size = 11
-background = #141C16
+font-family = CaskaydiaMono NF Bold
+font-size = 9
+window-inherit-working-directory = true
+config-file = ~/.config/omarchy/current/theme/ghostty.conf
+# background = #141C16
+#working-directory = inherit

@@ -15,6 +15,7 @@ eval (/home/linuxbrew/.linuxbrew/bin/brew shellenv)
 
 fish_add_path -a $HOME/.local/bin $PATH
 fish_add_path -a $BUN_INSTALL/bin
+fish_add_path -a $HOME/.dotnet/tools
 set -Ux BUN_INSTALL $HOME/.bun
 
 # --- Starship Prompt ---
@@ -35,11 +36,11 @@ set -U fish_history_limit 70000
 # --- Aliases ---
 alias download "wget --mirror --convert-links --adjust-extension --page-requisites --no-parent "
 alias fzf "fzf --preview 'bat --color=always {}'"
-alias flatpak "flatpak --installation=external"
 alias ncdu "ncdu --color dark"
 alias ls "eza -lh --group-directories-first --icons=auto"
 alias l ls
 alias la "ls -a"
+alias dotnet "mise x dotnet@8 -- dotnet"
 
 # --- uwu cli helper (custom function) ---
 function uwu
@@ -50,7 +51,17 @@ function uwu
     eval $cmd
 end
 
+# Rust
+source "$HOME/.cargo/env.fish"
+
+# Dotnet
+set DOTNET_CLI_TELEMETRY_OPTOUT 1
+set -Ux DOTNET_ROOT (mise where dotnet@8)
+fish_add_path $DOTNET_ROOT
+
 # --- Bun completions ---
 #if test -s "$BUN_INSTALL/_bun"
 #    source "$BUN_INSTALL/_bun"
 #end
+set -gx DOTNET_ROOT /home/hamid/.local/share/mise/installs/dotnet/8.0.414
+set -gx PATH $DOTNET_ROOT $PATH

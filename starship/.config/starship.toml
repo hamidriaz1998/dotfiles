@@ -61,7 +61,7 @@ yellow = '#E5C07B'
 status = "#e23140"
 
 [os]
-format = '(fg:current_line)[](fg:orange)[ 󰕈 ](fg:primary bg:orange)[](fg:orange)'
+format = '(fg:current_line)[](fg:blue)[ 󰣇 ](fg:primary bg:blue)[](fg:blue)'
 disabled = false
 
 [status]
