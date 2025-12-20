@@ -8,7 +8,30 @@
 // from the command palette
 {
   // File syntax highlighting
-  "show_edit_predictions": false,
+  "ssh_connections": [
+    {
+      "host": "myvps",
+      "args": [],
+      "projects": [
+        {
+          "paths": [
+            "/home/hamid/taskmindBackend"
+          ]
+        }
+      ]
+    }
+  ],
+  "agent_ui_font_size": 13.0,
+  "agent_buffer_font_size": 11.0,
+  "project_panel": {
+    "entry_spacing": "comfortable"
+  },
+  "title_bar": {
+    "show_menus": false
+  },
+  "ui_font_weight": 430.0,
+  "ui_font_family": "Adwaita Sans",
+  "show_edit_predictions": true,
   "edit_predictions": {
     "disabled_globs": [],
     "mode": "eager"
@@ -22,31 +45,34 @@
   "icon_theme": "Catppuccin Frappé",
   "file_types": {
     "Dockerfile": ["Dockerfile", "Dockerfile.*"],
-    "JSON": ["json", "jsonc", "*.code-snippets"]
+    "JSON": ["json", "*.code-snippets"],
+    "JSONC": ["jsonc"]
   },
   "auto_install_extensions": {
     "html": true,
+    "toml": true,
     "basher": true,
     "emmet": true,
     "make": true,
     "sql": true,
-    "blackula": true,
     "csv": true,
     "env": true,
-    "java": true,
     "ruff": true,
     "svelte": true,
     "deno": true,
     "git-firefly": true,
     "rainbow-csv": true,
     "scss": true,
-    "tokyo-night": true
+    "catppuccin-icons": true
   },
   "minimap": {
     "show": "always"
   },
   "soft_wrap": "editor_width",
   "languages": {
+    "Markdown": {
+      "show_edit_predictions": true
+    },
     "Go": {
       "show_edit_predictions": true
     },
@@ -66,21 +92,7 @@
     //   "language_servers": ["ruff", "pyright"]
     // },
     "Python": {
-      "language_servers": ["ruff", "pyright"],
-      "format_on_save": "on",
-      "formatter": [
-        {
-          "code_actions": {
-            "source.organizeImports.ruff": true,
-            "source.fixAll.ruff": true
-          }
-        },
-        {
-          "language_server": {
-            "name": "ruff"
-          }
-        }
-      ]
+      "show_edit_predictions": true
     },
     "HTML": {
       "show_edit_predictions": true
@@ -89,14 +101,16 @@
       "show_edit_predictions": true,
       "inlay_hints": {
         "show_parameter_hints": false,
-        "show_type_hints": false
+        "show_type_hints": false,
+        "show_value_hints": false,
+        "show_other_hints": false
       },
       "format_on_save": "on",
       "formatter": "auto",
-      "language_servers": ["deno", "typescript-language-server"]
+      "language_servers": ["typescript-language-server", "deno"]
     },
     "JavaScript": {
-      "show_edit_predictions": false,
+      "show_edit_predictions": true,
       "inlay_hints": {
         "show_parameter_hints": false,
         "show_type_hints": false
@@ -105,10 +119,6 @@
   },
   // Use zed commit editor
   "terminal": {
-    "env": {
-      "EDITOR": "zed --wait"
-    },
-    // "cursor_shape":"bar",
     "font_family": "JetBrainsMono Nerd Font"
   },
   "inlay_hints": {
@@ -116,14 +126,13 @@
   },
   "indent_guides": {
     "enabled": true,
-    "indentation": 4,
     "coloring": "indent_aware"
   },
-  "relative_line_numbers": true,
-  "cursor_blink": false,
+  "relative_line_numbers": "enabled",
+  "cursor_blink": true,
   "vertical_scroll_margin": 0,
   "tab_bar": {
-    "show_nav_history_buttons": false
+    "show_nav_history_buttons": true
   },
   "toolbar": {
     "breadcrumbs": true
@@ -131,8 +140,8 @@
   "agent": {
     "play_sound_when_agent_done": true,
     "inline_assistant_model": {
-      "provider": "zed.dev",
-      "model": "claude-sonnet-4-latest"
+      "provider": "copilot_chat",
+      "model": "gpt-4o"
     },
     "always_allow_tool_actions": true,
     "profiles": {
@@ -155,22 +164,23 @@
       "provider": "copilot_chat",
       "model": "claude-sonnet-4"
     },
-    "version": "2",
     "dock": "right"
+  },
+  "agent_servers": {
+    "OpenCode": {
+      "command": "opencode",
+      "args": ["acp"]
+    }
   },
   "telemetry": {
     "diagnostics": false,
     "metrics": false
   },
   "vim_mode": true,
-  "ui_font_size": 15,
-  "buffer_font_size": 14.0,
-  "buffer_font_family": "JetBrainsMono Nerd Font",
-  "theme": {
-    "mode": "system",
-    "light": "Catppuccin Latte (Blur)",
-    "dark": "Tokyo Night Storm"
-  },
+  "ui_font_size": 13.0,
+  "buffer_font_size": 10.7,
+  "buffer_font_family": "CaskaydiaMono Nerd Font",
+  "theme": "Omarchy Current",
   "tabs": {
     "git_status": true,
     "file_icons": true,

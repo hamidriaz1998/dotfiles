@@ -24,8 +24,7 @@
 #
 # # Spacing around the equals sign does not matter.
 # # All of these are identical:
-# key=value
-# key= value
+# key=value key= value
 # key =value
 # key = value
 #
@@ -41,12 +40,16 @@
 # # which is explained in the docs for that config option.
 # # Just for example:
 # resize-overlay-duration = 4s 200ms
-
 background-opacity = 0.95
 background-blur = true
 font-family = CaskaydiaMono NF Bold
 font-size = 9
 window-inherit-working-directory = true
+custom-shader = shaders/cursor_warp.glsl
+custom-shader = shaders/rectangle_boom_cursor.glsl
 config-file = ~/.config/omarchy/current/theme/ghostty.conf
 # background = #141C16
 #working-directory = inherit
+
+# Slowdown mouse scrolling
+mouse-scroll-multiplier = 0.95

@@ -1,0 +1,7 @@
+[
+  {
+    "label": "Run lazygit",
+    "command": "lazygit -p $ZED_WORKTREE_ROOT",
+    "reveal_target": "center"
+  }
+]

@@ -1,0 +1,287 @@
+/* Import theme colors */
+@import "../omarchy/current/theme/waybar.css";
+
+/* Base styling */
+* {
+  font-family: "JetBrainsMono Nerd Font", "Symbols Nerd Font", monospace;
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 0;
+}
+
+window#waybar {
+  background: @background;
+  color: @foreground;
+  border-bottom: 2px solid alpha(@foreground, 0.15);
+  transition: all 0.3s ease;
+}
+
+/* Module base styling */
+#custom-omarchy,
+#custom-win10,
+#workspaces,
+#clock,
+#custom-update,
+#custom-screenrecording-indicator,
+#backlight,
+#tray,
+#idle_inhibitor,
+#bluetooth,
+#network,
+#pulseaudio,
+#cpu,
+#battery {
+  padding: 0 10px;
+  margin: 2px 4px;
+  background: alpha(@foreground, 0.08);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+/* Hover effects for interactive modules */
+#custom-omarchy:hover,
+#custom-win10:hover,
+#workspaces button:hover,
+#custom-update:hover,
+#custom-screenrecording-indicator:hover,
+#idle_inhibitor:hover,
+#bluetooth:hover,
+#network:hover,
+#pulseaudio:hover,
+#cpu:hover,
+#battery:hover {
+  background: alpha(@foreground, 0.15);
+  box-shadow: inset 0 0 0 1px alpha(@foreground, 0.2);
+}
+
+/* Left modules */
+#custom-omarchy {
+  font-size: 16px;
+  padding: 0 10px;
+  margin-left: 6px;
+  background: alpha(@foreground, 0.12);
+  color: @foreground;
+}
+
+#custom-win10 {
+  font-size: 15px;
+  color: alpha(@foreground, 0.8);
+}
+
+#custom-win10:hover {
+  color: #0078d4;
+}
+
+/* Workspaces */
+#workspaces {
+  padding: 0;
+  margin: 1px 4px;
+  background: transparent;
+}
+
+#workspaces button {
+  padding: 0 6px;
+  margin: 0 1px;
+  background: alpha(@foreground, 0.08);
+  color: alpha(@foreground, 0.6);
+  border-radius: 5px;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+#workspaces button.active {
+  background: @foreground;
+  color: @background;
+  font-weight: 600;
+  box-shadow: 0 2px 8px alpha(@foreground, 0.3);
+}
+
+#workspaces button.urgent {
+  background: #ff6b6b;
+  color: @background;
+}
+
+/* Center modules */
+#clock {
+  font-weight: 600;
+  font-size: 13px;
+  padding: 0 14px;
+  margin: 1px 6px;
+  background: alpha(@foreground, 0.1);
+  color: @foreground;
+  letter-spacing: 0.3px;
+}
+
+#custom-update {
+  color: #ffd700;
+  font-size: 14px;
+}
+
+#custom-screenrecording-indicator {
+  color: #ff4444;
+  font-weight: 600;
+}
+
+/* Right modules - Icons */
+#cpu,
+#network,
+#bluetooth,
+#pulseaudio,
+#idle_inhibitor {
+  font-size: 14px;
+  padding: 0 8px;
+  color: alpha(@foreground, 0.85);
+}
+
+#cpu:hover {
+  color: #f97316;
+}
+
+#network:hover {
+  color: #10b981;
+}
+
+#bluetooth:hover {
+  color: #3b82f6;
+}
+
+#pulseaudio:hover {
+  color: #8b5cf6;
+}
+
+#idle_inhibitor:hover {
+  color: #eab308;
+}
+
+#battery {
+  padding: 0 12px;
+}
+
+/* Battery states */
+#battery.charging {
+  color: #4ade80;
+}
+
+#battery.warning {
+  color: #fbbf24;
+}
+
+#battery.critical {
+  color: #ef4444;
+}
+
+/* Network */
+#network.disconnected {
+  color: alpha(@foreground, 0.4);
+}
+
+/* Pulseaudio volume-based colors */
+#pulseaudio {
+  color: #22c55e;
+}
+
+#pulseaudio.muted {
+  color: alpha(@foreground, 0.5);
+}
+
+/* Idle inhibitor */
+#idle_inhibitor.activated {
+  color: #fbbf24;
+}
+
+/* Bluetooth */
+#bluetooth.connected {
+  color: #60a5fa;
+}
+
+#bluetooth.disabled {
+  color: alpha(@foreground, 0.4);
+}
+
+/* Tray */
+#tray {
+  background: alpha(@foreground, 0.06);
+  padding: 0 8px;
+}
+
+#tray > .passive {
+  -gtk-icon-effect: dim;
+}
+
+#tray > .needs-attention {
+  -gtk-icon-effect: highlight;
+}
+
+/* Tray expander group */
+#tray-expander {
+  background: transparent;
+}
+
+#custom-expand-icon {
+  background: alpha(@foreground, 0.08);
+  color: alpha(@foreground, 0.8);
+  padding: 0 6px;
+  border-radius: 6px;
+  margin: 1px 3px;
+  font-size: 12px;
+  transition: all 0.3s ease;
+}
+
+#custom-expand-icon:hover {
+  background: alpha(@foreground, 0.15);
+}
+
+.tray-group-item {
+  margin: 2px 2px;
+}
+
+/* Backlight slider */
+slider {
+  min-height: 0px;
+  min-width: 80px;
+  opacity: 0.8;
+  background: alpha(@foreground, 0.08);
+  border-radius: 8px;
+  margin: 2px 4px;
+}
+
+slider:hover {
+  opacity: 1;
+  background: alpha(@foreground, 0.12);
+}
+
+trough {
+  min-height: 18px;
+  min-width: 80px;
+  border-radius: 8px;
+  background: alpha(@foreground, 0.15);
+}
+
+highlight {
+  min-height: 18px;
+  border-radius: 8px;
+  background: @foreground;
+}
+
+scale trough {
+  margin: 0;
+  border-radius: 8px;
+}
+
+scale highlight {
+  background: linear-gradient(90deg, alpha(@foreground, 0.7), @foreground);
+  border-radius: 8px;
+}
+
+/* Tooltips */
+tooltip {
+  background: @background;
+  color: @foreground;
+  border: 1px solid alpha(@foreground, 0.2);
+  border-radius: 8px;
+  padding: 8px 12px;
+}
+
+tooltip label {
+  color: @foreground;
+}

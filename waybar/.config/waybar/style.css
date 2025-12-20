@@ -1,0 +1,227 @@
+@import "../omarchy/current/theme/waybar.css";
+
+/* === GLOBAL === */
+* {
+  border: none;
+  border-radius: 0;
+  font-family: 'JetBrainsMono Nerd Font';
+  font-size: 13px;
+  font-weight: 500;
+  min-height: 0;
+  transition: all 0.25s ease-in-out;
+}
+
+window#waybar {
+  background: linear-gradient(
+    to right,
+    alpha(@background, 0.95),
+    alpha(@background, 0.98)
+  );
+  color: @foreground;
+  border-bottom: 1px solid alpha(@foreground, 0.08);
+  box-shadow: 0 1px 8px alpha(@foreground, 0.15);
+}
+
+/* === MODULE CONTAINERS === */
+.modules-left,
+.modules-center,
+.modules-right {
+  margin: 0 0;
+}
+
+/* === BASE MODULE STYLE === */
+#custom-omarchy,
+#custom-win10,
+#clock,
+#custom-update,
+#custom-screenrecording-indicator,
+#cpu,
+#network,
+#bluetooth,
+#pulseaudio,
+#battery,
+#idle_inhibitor,
+#tray,
+#backlight,
+#backlight-slider,
+#group-tray-expander {
+  padding: 0 12px;
+  margin: 4px 3px;
+  border-radius: 10px;
+  background: alpha(@foreground, 0.06);
+  color: @foreground;
+}
+
+#custom-omarchy:hover,
+#custom-win10:hover,
+#clock:hover,
+#custom-update:hover,
+#cpu:hover,
+#network:hover,
+#bluetooth:hover,
+#pulseaudio:hover,
+#battery:hover,
+#idle_inhibitor:hover,
+#tray:hover,
+#backlight:hover {
+  background: alpha(@foreground, 0.12);
+  box-shadow: inset 0 0 0 1px alpha(@foreground, 0.2);
+}
+
+#custom-omarchy:hover {
+  color: #9ECE6A;
+}
+#custom-win10:hover {
+    color: #0078d7;
+}
+
+/* === WORKSPACES === */
+#workspaces {
+  padding: 0 6px;
+}
+
+#workspaces button {
+  background: transparent;
+  color: @foreground;
+  border-radius: 6px;
+  padding: 0 5px;
+  transition: all 0.25s ease;
+}
+
+/* Hover */
+#workspaces button:hover {
+  background: alpha(@foreground, 0.12);
+  color: @foreground;
+}
+
+/* Active workspace */
+#workspaces button.active {
+  background: alpha(@foreground, 0.18);
+  color: @foreground;
+  font-weight: 600;
+  box-shadow: 0 0 4px 1px alpha(@foreground, 0.25);
+}
+
+
+/* Empty workspace */
+#workspaces button.empty {
+  color: alpha(@foreground, 0.4);
+}
+
+
+/* === CLOCK === */
+#clock {
+  font-weight: 600;
+  color: @foreground;
+}
+
+/* === CPU === */
+#cpu {
+  color: #64b5f6;
+}
+
+/* === NETWORK === */
+#network {
+  color: #9575cd;
+}
+#network.disconnected {
+  color: #ef5350;
+}
+
+/* === BLUETOOTH === */
+#bluetooth {
+  color: #42a5f5;
+}
+#bluetooth.connected {
+  color: #29b6f6;
+}
+
+/* === BATTERY === */
+#battery {
+  color: #aed581;
+}
+#battery.warning {
+  color: #ffb74d;
+}
+#battery.critical {
+  color: #ef5350;
+}
+#battery.charging {
+  color: #81c784;
+}
+
+/* === PULSEAUDIO === */
+#pulseaudio {
+  color: #ffb74d;
+}
+#pulseaudio.muted {
+  color: alpha(@foreground, 0.4);
+}
+
+/* === BACKLIGHT SLIDER === */
+#backlight-slider {
+  min-width: 100px;  /* Increased horizontal width */
+  margin: 0 10px;
+  padding: 0 6px;
+}
+
+#backlight-slider trough {
+  background: alpha(@foreground, 0.12);
+  border-radius: 6px;
+  min-height: 6px;
+}
+
+#backlight-slider highlight {
+  background: linear-gradient(to right, #5a8dee, #00bfa6); /* subtle accent */
+  border-radius: 6px;
+}
+
+
+/* === IDLE INHIBITOR === */
+#idle_inhibitor {
+  padding-right: 17px;
+}
+#idle_inhibitor.activated {
+  color: #81c784;
+}
+#idle_inhibitor.deactivated {
+  color: alpha(@foreground, 0.6);
+}
+
+/* === CUSTOM UPDATE === */
+#custom-update {
+  color: #ffd54f;
+}
+#custom-update:hover {
+  background: alpha(#ffd54f, 0.2);
+}
+
+/* === SCREEN RECORDING INDICATOR === */
+#custom-screenrecording-indicator.recording {
+  background: #e53935;
+  color: #ffffff;
+  box-shadow: 0 0 10px 2px alpha(#e53935, 0.6);
+}
+
+/* === TOOLTIP === */
+tooltip {
+  background: alpha(@background, 0.92);
+  color: @foreground;
+  border: 1px solid alpha(@foreground, 0.1);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 12px;
+  box-shadow: 0 2px 8px alpha(@foreground, 0.2);
+}
+
+/* === TRAY === */
+#tray {
+  padding-right: 6px;
+}
+#tray menu {
+  background: alpha(@background, 0.9);
+  color: @foreground;
+  border: 1px solid alpha(@foreground, 0.1);
+  border-radius: 6px;
+  padding: 6px 10px;
+}

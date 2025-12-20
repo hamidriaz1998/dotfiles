@@ -1,13 +1,13 @@
-#!/usr/bin/env bash
+#!/usr/bin/bash
 
 set -e
 
 echo "==> Restoring GNOME settings from dconf..."
-dconf load / < ~/dotfiles/gnome/dconf-settings.ini
+dconf load / < ~/.dotfiles/gnome/dconf-settings.ini
 
 echo "==> Restoring custom GNOME extensions..."
 # Copy any manually backed-up extensions
-cp -r ~/dotfiles/gnome/extensions/* ~/.local/share/gnome-shell/extensions/ || echo "No custom extensions found to copy."
+cp -r ~/.dotfiles/gnome/extensions/* ~/.local/share/gnome-shell/extensions/ || echo "No custom extensions found to copy."
 
 echo "==> Checking gnome-shell-extension-installer..."
 if ! command -v gnome-shell-extension-installer &> /dev/null; then
@@ -23,7 +23,7 @@ echo "==> Installing extensions from list..."
 while read uuid; do
     echo "Installing $uuid..."
     gnome-shell-extension-installer "$uuid" --yes
-done < ~/dotfiles/gnome/extensions-list.txt
+done < ~/.dotfiles/gnome/extensions-list.txt
 
 echo "==> Reloading GNOME Shell..."
 # If you're on X11, you can restart GNOME Shell:
