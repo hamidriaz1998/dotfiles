@@ -1,19 +1,21 @@
 function __auto_activate_venv --on-variable PWD
-    # deactivate any active venv when moving out
+    # Only deactivate if we're leaving the venv's project directory
     if set -q VIRTUAL_ENV
-        deactivate
+        set venv_dir (dirname (dirname $VIRTUAL_ENV))
+        if not string match -q "$venv_dir*" $PWD
+            deactivate
+        end
     end
 
-    # walk up directories to find a .venv folder
-    set dir $PWD
-    while test "$dir" != ""
-        if test -d "$dir/.venv/bin"
-            source "$dir/.venv/bin/activate.fish"
-            break
-        end
-        set dir (dirname "$dir")
-        if test "$dir" = /
-            break
+    # Only look for new venv if none active
+    if not set -q VIRTUAL_ENV
+        set dir $PWD
+        while test "$dir" != "" -a "$dir" != "/"
+            if test -d "$dir/.venv/bin"
+                source "$dir/.venv/bin/activate.fish"
+                break
+            end
+            set dir (dirname "$dir")
         end
     end
 end

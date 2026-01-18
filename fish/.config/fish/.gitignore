@@ -1,0 +1,9 @@
+# Machine-specific files that should not be synced
+fish_variables
+
+# Fish completion cache
+completions/__fish_*
+
+# Local overrides (if you want to add machine-specific config later)
+conf.d/local.fish
+config.local.fish
