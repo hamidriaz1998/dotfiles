@@ -74,7 +74,7 @@
       "show_edit_predictions": true
     },
     "C++": {
-      "show_edit_predictions": false
+      "show_edit_predictions": true
     },
     "JSONC": {
       "show_edit_predictions": true
@@ -158,8 +158,8 @@
     },
     "default_profile": "write",
     "default_model": {
-      "provider": "zed.dev",
-      "model": "claude-sonnet-4-5"
+      "provider": "copilot_chat",
+      "model": "claude-opus-4.5"
     },
     "dock": "right"
   },
