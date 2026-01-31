@@ -15,10 +15,13 @@
     "backlight/slider",
     "group/tray-expander",
     "idle_inhibitor",
-    "bluetooth",
-    "network",
     "pulseaudio",
     "cpu",
+    "memory",
+    "disk",
+    "temperature",
+    "bluetooth",
+    "network",
     "battery"
   ],
   "custom/win10":{
@@ -80,7 +83,45 @@
   "cpu": {
     "interval": 5,
     "format": "󰍛",
-    "on-click": "omarchy-launch-or-focus-tui btop"
+    "tooltip-format": "CPU: {usage}%",
+    "on-click": "omarchy-launch-or-focus-tui btop",
+    "states": {
+      "warning": 70,
+      "critical": 90
+    }
+  },
+  "hyprland/window": {
+    "format": "  {class}",
+    "max-length": 25,
+    "separate-outputs": true,
+  },
+  "memory": {
+    "interval": 5,
+    "format": "󰘚",
+    "tooltip-format": "Memory: {percentage}%\n{used:0.1f}G / {total:0.1f}G",
+    "states": {
+      "warning": 70,
+      "critical": 90
+    }
+  },
+  "disk": {
+    "interval": 30,
+    "format": "󰋊",
+    "path": "/",
+    "tooltip-format": "Disk: {percentage_used}%\n{used} / {total}",
+    "states": {
+      "warning": 70,
+      "critical": 90
+    }
+  },
+  "temperature": {
+    "hwmon-path": "/sys/devices/platform/coretemp.0/hwmon/hwmon7/temp1_input",
+    "interval": 5,
+    "warning-threshold": 60,
+    "critical-threshold": 80,
+    "format": "{icon}",
+    "format-icons": ["", "", "", "", ""],
+    "tooltip-format": "Temperature: {temperatureC}°C"
   },
   "clock": {
     "format": "{:%A %I:%M %p}",
@@ -94,7 +135,7 @@
     "format-wifi": "{icon}",
     "format-ethernet": "󰀂",
     "format-disconnected": "󰤮",
-    "tooltip-format-wifi": "{essid} ({frequency} GHz)\n⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
+    "tooltip-format-wifi": "{essid} ({signalStrength}%)\n{frequency} GHz\n⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
     "tooltip-format-ethernet": "⇣{bandwidthDownBytes}  ⇡{bandwidthUpBytes}",
     "tooltip-format-disconnected": "Disconnected",
     "interval": 3,
@@ -219,5 +260,5 @@
         "name": "obs"
       }
     ]
-  },  
+  }
 }

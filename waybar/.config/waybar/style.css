@@ -26,7 +26,7 @@ window#waybar {
 .modules-left,
 .modules-center,
 .modules-right {
-  margin: 0 0;
+  margin: 0;
 }
 
 /* === BASE MODULE STYLE === */
@@ -36,6 +36,9 @@ window#waybar {
 #custom-update,
 #custom-screenrecording-indicator,
 #cpu,
+#memory,
+#disk,
+#temperature,
 #network,
 #bluetooth,
 #pulseaudio,
@@ -44,7 +47,8 @@ window#waybar {
 #tray,
 #backlight,
 #backlight-slider,
-#group-tray-expander {
+#group-tray-expander,
+#privacy {
   padding: 0 12px;
   margin: 4px 3px;
   border-radius: 10px;
@@ -56,14 +60,19 @@ window#waybar {
 #custom-win10:hover,
 #clock:hover,
 #custom-update:hover,
+#custom-screenrecording-indicator:hover,
 #cpu:hover,
+#memory:hover,
+#disk:hover,
+#temperature:hover,
 #network:hover,
 #bluetooth:hover,
 #pulseaudio:hover,
 #battery:hover,
 #idle_inhibitor:hover,
 #tray:hover,
-#backlight:hover {
+#backlight:hover,
+#privacy:hover {
   background: alpha(@foreground, 0.12);
   box-shadow: inset 0 0 0 1px alpha(@foreground, 0.2);
 }
@@ -73,6 +82,30 @@ window#waybar {
 }
 #custom-win10:hover {
     color: #0078d7;
+}
+
+/* === FOCUS STATES (Accessibility) === */
+#custom-omarchy:focus,
+#custom-win10:focus,
+#clock:focus,
+#custom-update:focus,
+#cpu:focus,
+#memory:focus,
+#disk:focus,
+#temperature:focus,
+#network:focus,
+#bluetooth:focus,
+#pulseaudio:focus,
+#battery:focus,
+#idle_inhibitor:focus,
+#privacy:focus {
+  outline: 2px solid alpha(@foreground, 0.4);
+  outline-offset: -2px;
+}
+
+#workspaces button:focus {
+  outline: 2px solid alpha(@foreground, 0.4);
+  outline-offset: -2px;
 }
 
 /* === WORKSPACES === */
@@ -108,6 +141,19 @@ window#waybar {
   color: alpha(@foreground, 0.4);
 }
 
+/* === WINDOW === */
+#window {
+  padding: 0 12px;
+  margin: 4px 3px;
+  color: alpha(@foreground, 0.8);
+  font-weight: 500;
+}
+
+#window.empty {
+  background: transparent;
+  padding: 0;
+}
+
 
 /* === CLOCK === */
 #clock {
@@ -116,42 +162,81 @@ window#waybar {
 }
 
 /* === CPU === */
-#cpu {
+#cpu:hover {
   color: #64b5f6;
+}
+#cpu.warning {
+  color: #f9e2af;
+}
+#cpu.critical {
+  color: #f38ba8;
+}
+
+/* === MEMORY === */
+#memory:hover {
+  color: #ce93d8;
+}
+#memory.warning {
+  color: #f9e2af;
+}
+#memory.critical {
+  color: #f38ba8;
+}
+
+/* === DISK === */
+#disk:hover {
+  color: #a1887f;
+}
+#disk.warning {
+  color: #f9e2af;
+}
+#disk.critical {
+  color: #f38ba8;
+}
+
+/* === TEMPERATURE === */
+#temperature:hover {
+  color: #81c784;
+}
+#temperature.warning {
+  color: #f9e2af;
+}
+#temperature.critical {
+  color: #f38ba8;
 }
 
 /* === NETWORK === */
-#network {
+#network:hover {
   color: #9575cd;
 }
 #network.disconnected {
-  color: #ef5350;
+  color: #f38ba8;
 }
 
 /* === BLUETOOTH === */
-#bluetooth {
+#bluetooth:hover {
   color: #42a5f5;
 }
-#bluetooth.connected {
+#bluetooth.connected:hover {
   color: #29b6f6;
 }
 
 /* === BATTERY === */
-#battery {
+#battery:hover {
   color: #aed581;
 }
 #battery.warning {
-  color: #ffb74d;
+  color: #f9e2af;
 }
 #battery.critical {
-  color: #ef5350;
+  color: #f38ba8;
 }
 #battery.charging {
   color: #81c784;
 }
 
 /* === PULSEAUDIO === */
-#pulseaudio {
+#pulseaudio:hover {
   color: #ffb74d;
 }
 #pulseaudio.muted {
@@ -160,7 +245,7 @@ window#waybar {
 
 /* === BACKLIGHT SLIDER === */
 #backlight-slider {
-  min-width: 100px;  /* Increased horizontal width */
+  min-width: 100px;
   margin: 0 10px;
   padding: 0 6px;
 }
@@ -172,8 +257,12 @@ window#waybar {
 }
 
 #backlight-slider highlight {
-  background: linear-gradient(to right, #5a8dee, #00bfa6); /* subtle accent */
+  background: alpha(@foreground, 0.5);
   border-radius: 6px;
+}
+
+#backlight-slider:hover highlight {
+  background: alpha(@foreground, 0.7);
 }
 
 
@@ -233,4 +322,11 @@ tooltip {
 
 #custom-voxtype.recording {
   color: #a55555;
+}
+
+#privacy {
+  padding: 0 8px;
+}
+#privacy-item {
+  color: #e57373;
 }
