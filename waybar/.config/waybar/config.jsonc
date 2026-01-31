@@ -124,8 +124,8 @@
     "tooltip-format": "Temperature: {temperatureC}°C"
   },
   "clock": {
-    "format": "{:%A %I:%M %p}",
-    "format-alt": "{:L%d %B W%V %Y}",
+    "format": "{:%I:%M %p}",
+    "format-alt": "{:%A %d %B W%V %Y}",
     "tooltip": false,
     "on-click-right": "omarchy-launch-floating-terminal-with-presentation omarchy-tz-select"
   },
