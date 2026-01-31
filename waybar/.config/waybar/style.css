@@ -219,8 +219,8 @@ window#waybar {
 #bluetooth:hover {
   color: #42a5f5;
 }
-#bluetooth.connected:hover {
-  color: #29b6f6;
+#bluetooth.connected {
+  color: #42a5f5;
 }
 
 /* === BATTERY === */
@@ -241,8 +241,14 @@ window#waybar {
 }
 
 /* === PULSEAUDIO === */
-#pulseaudio:hover {
-  color: #ffb74d;
+#pulseaudio.medium {
+  color: #f9e2af;
+}
+#pulseaudio.high {
+  color: #f38ba8;
+}
+#pulseaudio.low {
+  color: @foreground;
 }
 #pulseaudio.muted {
   color: alpha(@foreground, 0.4);

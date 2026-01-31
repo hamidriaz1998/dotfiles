@@ -179,6 +179,11 @@
     "format-icons": {
       "headphone": "",
       "default": ["", "", ""]
+    },
+    "states": {
+      "low": 31
+      "medium": 71,
+      "high": 100,
     }
   },
   "idle_inhibitor": {
