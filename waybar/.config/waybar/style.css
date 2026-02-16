@@ -168,7 +168,7 @@ window#waybar {
   color: #64b5f6;
 }
 #cpu.warning {
-  color: #f9e2af;
+  color: #d9a227;
 }
 #cpu.critical {
   color: #f38ba8;
@@ -179,7 +179,7 @@ window#waybar {
   color: #ce93d8;
 }
 #memory.warning {
-  color: #f9e2af;
+  color: #d9a227;
 }
 #memory.critical {
   color: #f38ba8;
@@ -190,7 +190,7 @@ window#waybar {
   color: #a1887f;
 }
 #disk.warning {
-  color: #f9e2af;
+  color: #d9a227;
 }
 #disk.critical {
   color: #f38ba8;
@@ -201,7 +201,7 @@ window#waybar {
   color: #81c784;
 }
 #temperature.warning {
-  color: #f9e2af;
+  color: #d9a227;
 }
 #temperature.critical {
   color: #f38ba8;
@@ -211,7 +211,8 @@ window#waybar {
 #network:hover {
   color: #9575cd;
 }
-#network.disconnected {
+#network.disconnected,
+#network.disabled{
   color: #f38ba8;
 }
 
@@ -222,6 +223,9 @@ window#waybar {
 #bluetooth.connected {
   color: #42a5f5;
 }
+#bluetooth.off{
+  color: #f38ba8;
+}
 
 /* === BATTERY === */
 #battery{
@@ -231,7 +235,7 @@ window#waybar {
   color: #aed581;
 }
 #battery.warning {
-  color: #f9e2af;
+  color: #d9a227;
 }
 #battery.critical {
   color: #f38ba8;
@@ -242,7 +246,7 @@ window#waybar {
 
 /* === PULSEAUDIO === */
 #pulseaudio.medium {
-  color: #f9e2af;
+  color: #d9a227;
 }
 #pulseaudio.high {
   color: #f38ba8;

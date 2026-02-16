@@ -115,7 +115,7 @@
     }
   },
   "temperature": {
-    "hwmon-path": "/sys/devices/platform/coretemp.0/hwmon/hwmon7/temp1_input",
+    "hwmon-path": "/sys/devices/platform/coretemp.0/hwmon/hwmon5/temp1_input",
     "interval": 5,
     "warning-threshold": 60,
     "critical-threshold": 80,
@@ -181,7 +181,7 @@
       "default": ["", "", ""]
     },
     "states": {
-      "low": 31
+      "low": 31,
       "medium": 71,
       "high": 100,
     }
