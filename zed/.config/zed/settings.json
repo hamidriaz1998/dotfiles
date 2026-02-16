@@ -1,51 +1,103 @@
-// Zed settings
-//
-// For information on how to configure Zed, see the Zed
-// documentation: https://zed.dev/docs/configuring-zed
-//
-// To see all of Zed's default settings without changing your
-// custom settings, run the `zed: Open Default Settings` command
-// from the command palette
 {
-  // File syntax highlighting
+  // === Remote Development ===
+  "agent_servers": {
+    "opencode": {
+      "type": "custom",
+      "command": "/usr/bin/opencode acp",
+    },
+  },
   "ssh_connections": [
     {
       "host": "myvps",
-      "args": [],
-      "projects": [
-        {
-          "paths": ["/home/hamid/taskmindBackend"]
-        }
-      ]
-    }
+      "projects": [{ "paths": ["/home/hamid/taskmindBackend"] }],
+    },
   ],
-  "agent_ui_font_size": 13.0,
-  "agent_buffer_font_size": 11.0,
-  "project_panel": {
-    "entry_spacing": "comfortable"
-  },
-  "title_bar": {
-    "show_menus": false
-  },
-  "ui_font_weight": 430.0,
-  "ui_font_family": "Adwaita Sans",
-  "show_edit_predictions": true,
-  "edit_predictions": {
-    "disabled_globs": [],
-    "mode": "eager"
-  },
-  "search": {
-    "button": false
-  },
-  "features": {
-    "edit_prediction_provider": "zed"
-  },
+
+  // === Appearance ===
+  "theme": "Omarchy Current",
   "icon_theme": "Catppuccin Frappé",
+  "ui_font_family": "Adwaita Sans",
+  "ui_font_size": 13,
+  "ui_font_weight": 430,
+  "buffer_font_family": "CaskaydiaMono Nerd Font",
+  "buffer_font_size": 11,
+  "title_bar": { "show_menus": false },
+  "minimap": { "show": "auto" },
+  "project_panel": { "entry_spacing": "comfortable" },
+  "tabs": { "git_status": true, "file_icons": true },
+
+  // === Git ===
+  "git": { "inline_blame": { "enabled": true } },
+
+  // === File Finder ===
+  "file_finder": { "modal_max_width": "large" },
+
+  // === Editor Behavior ===
+  "vim_mode": true,
+  "relative_line_numbers": "enabled",
+  "soft_wrap": "editor_width",
+  "vertical_scroll_margin": 5,
+  "autosave": { "after_delay": { "milliseconds": 1000 } },
+  "format_on_save": "on",
+  "indent_guides": { "enabled": true, "coloring": "indent_aware" },
+
+  // === AI & Edit Predictions ===
+  "show_edit_predictions": true,
+  "edit_predictions": { "provider": "mercury", "mode": "eager" },
+  "agent": {
+    "inline_assistant_model": {
+      "provider": "copilot_chat",
+      "model": "gpt-5-mini"
+    },
+    "default_model": {
+      "provider": "copilot_chat",
+      "model": "gpt-5.3-codex",
+    },
+    "favorite_models": [],
+    "default_profile": "ask",
+    "model_parameters": [],
+  },
+  "agent_ui_font_size": 13,
+  "agent_buffer_font_size": 11,
+  "context_servers": {},
+
+  // === Terminal ===
+  "terminal": { "font_family": "JetBrainsMono Nerd Font" },
+
+  // === Language-Specific ===
+  "languages": {
+    "C": { "show_edit_predictions": true },
+    "Python": { "language_servers": ["ty", "ruff"], "inlay_hints": {"show_type_hints": false} },
+    "TypeScript": { "inlay_hints": { "enabled": false } },
+    "JavaScript": { "inlay_hints": { "enabled": false } },
+    "CSharp": { "language_servers": ["omnisharp"] },
+  },
+
+  // === LSP Configuration ===
+  "inlay_hints": { "enabled": true },
+  "lsp": {
+    "ruff": {
+      "settings": {
+        "organizeImports": true,
+        "lineLength": 140,
+        "fixAll": true,
+      },
+    },
+    "omnisharp": {
+      "binary": {
+        "path": "/home/hamid/.local/bin/omnisharp-dotnet",
+        "arguments": ["-lsp"],
+      },
+    },
+  },
+
+  // === File Associations ===
   "file_types": {
     "Dockerfile": ["Dockerfile", "Dockerfile.*"],
     "JSON": ["json", "*.code-snippets"],
-    "JSONC": ["jsonc"]
   },
+
+  // === Extensions ===
   "auto_install_extensions": {
     "html": true,
     "toml": true,
@@ -60,150 +112,9 @@
     "git-firefly": true,
     "rainbow-csv": true,
     "scss": true,
-    "catppuccin-icons": true
+    "catppuccin-icons": true,
   },
-  "minimap": {
-    "show": "always"
-  },
-  "soft_wrap": "editor_width",
-  "languages": {
-    "Markdown": {
-      "show_edit_predictions": true
-    },
-    "Go": {
-      "show_edit_predictions": true
-    },
-    "C++": {
-      "show_edit_predictions": true
-    },
-    "JSONC": {
-      "show_edit_predictions": true
-    },
-    "C": {
-      "show_edit_predictions": true
-    },
-    // "Python": {
-    //   "show_edit_predictions": true,
-    //   "format_on_save": "on",
-    //   "formatter": "auto",
-    //   "language_servers": ["ruff", "pyright"]
-    // },
-    "Python": {
-      "show_edit_predictions": true
-    },
-    "HTML": {
-      "show_edit_predictions": true
-    },
-    "TypeScript": {
-      "show_edit_predictions": true,
-      "inlay_hints": {
-        "show_parameter_hints": false,
-        "show_type_hints": false,
-        "show_value_hints": false,
-        "show_other_hints": false
-      },
-      "format_on_save": "on",
-      "formatter": "auto",
-      "language_servers": ["typescript-language-server"]
-    },
-    "JavaScript": {
-      "show_edit_predictions": true,
-      "inlay_hints": {
-        "show_parameter_hints": false,
-        "show_type_hints": false
-      }
-    }
-  },
-  // Use zed commit editor
-  "terminal": {
-    "font_family": "JetBrainsMono Nerd Font"
-  },
-  "inlay_hints": {
-    "enabled": true
-  },
-  "indent_guides": {
-    "enabled": true,
-    "coloring": "indent_aware"
-  },
-  "relative_line_numbers": "enabled",
-  "cursor_blink": true,
-  "vertical_scroll_margin": 0,
-  "tab_bar": {
-    "show_nav_history_buttons": true
-  },
-  "toolbar": {
-    "breadcrumbs": true
-  },
-  "agent": {
-    "play_sound_when_agent_done": true,
-    "inline_assistant_model": {
-      "provider": "copilot_chat",
-      "model": "gpt-5"
-    },
-    "always_allow_tool_actions": true,
-    "profiles": {
-      "test": {
-        "name": "test",
-        "tools": {
-          "fetch": true,
-          "copy_path": true,
-          "find_path": true,
-          "grep": true,
-          "list_directory": true,
-          "read_file": true
-        },
-        "enable_all_context_servers": false,
-        "context_servers": {}
-      }
-    },
-    "default_profile": "write",
-    "default_model": {
-      "provider": "copilot_chat",
-      "model": "claude-opus-4.5"
-    },
-    "dock": "right"
-  },
-  "agent_servers": {
-    "OpenCode": {
-      "type": "custom",
-      "command": "opencode",
-      "args": ["acp"]
-    }
-  },
-  "telemetry": {
-    "diagnostics": false,
-    "metrics": false
-  },
-  "vim_mode": true,
-  "ui_font_size": 13.0,
-  "buffer_font_size": 10.7,
-  "buffer_font_family": "CaskaydiaMono Nerd Font",
-  "theme": "Omarchy Current",
-  "tabs": {
-    "git_status": true,
-    "file_icons": true,
-    "close_position": "right"
-  },
-  "autosave": {
-    "after_delay": {
-      "milliseconds": 1000
-    }
-  },
-  "format_on_save": "on",
-  "lsp": {
-    "ruff": {
-      "settings": {
-        "organizeImports": true,
-        "lineLength": 140,
-        "fixAll": true
-      }
-    },
-    "pyright": {
-      "settings": {
-        "python.analysis": {
-          "diagnosticMode": "workspace"
-        }
-      }
-    }
-  }
+
+  // === Privacy ===
+  "telemetry": { "diagnostics": false, "metrics": false },
 }

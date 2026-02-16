@@ -1,49 +1,48 @@
-// Zed keymap
-//
-// For information on binding keys, see the Zed
-// documentation: https://zed.dev/docs/key-bindings
-//
-// To see the default key bindings run `zed: Open Default Keymap`
-// from the command palette.
 [
+  // Standard editor shortcuts (override vim defaults)
   {
     "context": "Editor && !menu",
     "bindings": {
-      "alt-g": [
-        "task::Spawn",
-        { "task_name": "Run lazygit", "reveal_target": "center" }
-      ],
-      "ctrl-c": "editor::Copy", // vim default: return to normal mode
-      "ctrl-x": "editor::Cut", // vim default: decrement
-      // "ctrl-v": "editor::Paste", // vim default: visual block mode
-      "ctrl-a": "editor::SelectAll" // vim default: increment
+      "alt-g": ["task::Spawn", { "task_name": "Run lazygit", "reveal_target": "center" }],
+      "ctrl-c": "editor::Copy",
+      "ctrl-x": "editor::Cut",
+      "ctrl-a": "editor::SelectAll"
     }
   },
+
+  // Vim leader key bindings
   {
     "context": "Editor && VimControl && !VimWaiting && !menu",
     "bindings": {
+      // Remap vim increment (since ctrl-a is SelectAll)
       "alt-a": "vim::Increment",
+      // Git
       "space g b": "git::Blame",
+      // Find/Toggle panels
       "space f f": "file_finder::Toggle",
       "space e b": "workspace::ToggleBottomDock",
       "space e f": "project_panel::ToggleFocus",
       "space e g": "git_panel::ToggleFocus",
       "space e d": "debugger::Start",
-      // Pane splitting
+      // Pane splits
       "space p l": "pane::SplitLeft",
       "space p r": "pane::SplitRight",
       "space p t": "pane::SplitUp",
       "space p b": "pane::SplitDown",
       "space p c": "pane::JoinAll",
-      // Pane movement
+      // Pane navigation
       "ctrl-h": "workspace::ActivatePaneLeft",
       "ctrl-j": "workspace::ActivatePaneDown",
       "ctrl-k": "workspace::ActivatePaneUp",
       "ctrl-l": "workspace::ActivatePaneRight",
-      // Tab managment
-      "space t k": "pane::CloseActiveItem"
+      // Tabs/Files
+      "space t k": "pane::CloseActiveItem",
+      "space q": "pane::CloseActiveItem",
+      "space s": "workspace::Save"
     }
   },
+
+  // Visual mode: move lines with J/K
   {
     "context": "Editor && vim_mode == visual && !VimWaiting && !VimObject",
     "bindings": {
@@ -51,6 +50,8 @@
       "shift-k": "editor::MoveLineUp"
     }
   },
+
+  // Project panel vim-like bindings
   {
     "context": "ProjectPanel && not_editing",
     "bindings": {
@@ -61,30 +62,27 @@
       "x": "project_panel::Cut",
       "c": "project_panel::Copy",
       "p": "project_panel::Paste",
-      // Pane movement
       "ctrl-h": "workspace::ActivatePaneLeft",
-      "ctrl-j": "workspace::ActivatePaneDown",
-      "ctrl-k": "workspace::ActivatePaneUp",
       "ctrl-l": "workspace::ActivatePaneRight"
     }
   },
+
+  // Global toggle for file tree
   {
-    "context": "!menu || (ProjectPanel && not_editing)",
-    "bindings": {
-      "ctrl-n": "workspace::ToggleLeftDock"
-    }
+    "context": "!menu",
+    "bindings": { "ctrl-n": "workspace::ToggleLeftDock" }
   },
+
+  // Terminal bindings
   {
     "context": "Terminal",
     "bindings": {
       "alt-z": "workspace::ToggleBottomDock",
       "ctrl-q": null,
       "ctrl-w": "pane::CloseActiveItem",
-      // Pane movement
       "ctrl-h": "workspace::ActivatePaneLeft",
       "ctrl-j": "workspace::ActivatePaneDown",
       "ctrl-k": "workspace::ActivatePaneUp"
-      // "ctrl-l": "workspace::ActivatePaneRight"
     }
   }
 ]
