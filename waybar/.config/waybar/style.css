@@ -1,10 +1,10 @@
-@import "../omarchy/current/theme/waybar.css";
+@import "/home/hamid/.config/omarchy/current/theme/waybar.css";
 
 /* === GLOBAL === */
 * {
   border: none;
   border-radius: 0;
-  font-family: 'JetBrainsMono Nerd Font';
+  font-family: 'JetBrainsMono Nerd Font Propo';
   font-size: 13px;
   font-weight: 500;
   min-height: 0;
@@ -34,7 +34,7 @@ window#waybar {
 #custom-win10,
 #clock,
 #custom-update,
-#custom-screenrecording-indicator,
+
 #cpu,
 #memory,
 #disk,
@@ -221,6 +221,7 @@ window#waybar {
   color: #42a5f5;
 }
 #bluetooth.connected {
+  font-size: 13px;
   color: #42a5f5;
 }
 #bluetooth.off{
@@ -283,7 +284,7 @@ window#waybar {
 
 /* === IDLE INHIBITOR === */
 #idle_inhibitor {
-  padding-right: 17px;
+  padding: 0 10px
 }
 #idle_inhibitor.activated {
   color: #81c784;
@@ -344,4 +345,9 @@ tooltip {
 }
 #privacy-item {
   color: #e57373;
+}
+
+#custom-idle-indicator.active,
+#custom-notification-silencing-indicator.active {
+  color: #a55555;
 }

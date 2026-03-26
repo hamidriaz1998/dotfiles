@@ -1,5 +1,6 @@
 {
   "reload_style_on_change": true,
+  "gtk-layer-shell": true,
   "layer": "top",
   "position": "top",
   "spacing": 0,
@@ -37,6 +38,7 @@
     "on-click": "activate",
     "format": "{icon}",
     "persistent-only": false,
+    "tooltip": true,
     "format-icons": {
       "default": "",
       "1": "1",
@@ -94,6 +96,7 @@
     "format": "  {class}",
     "max-length": 25,
     "separate-outputs": true,
+    "tooltip": true
   },
   "memory": {
     "interval": 5,
@@ -115,7 +118,7 @@
     }
   },
   "temperature": {
-    "hwmon-path": "/sys/devices/platform/coretemp.0/hwmon/hwmon5/temp1_input",
+    "hwmon-path": "/sys/devices/platform/coretemp.0/hwmon/hwmon6/temp1_input",
     "interval": 5,
     "warning-threshold": 60,
     "critical-threshold": 80,
@@ -166,7 +169,12 @@
     "format-disabled": "󰂲",
     "format-off": "󰂲",
     "format-connected": "󰂱",
-    "tooltip-format": "Devices connected: {num_connections}",
+    "format-connected-battery": "󰂱 {device_battery_percentage}%",
+    // "tooltip-format": "Devices connected: {num_connections}",
+    "tooltip-format": "{num_connections} connected",
+    "tooltip-format-connected": "{num_connections} connected\n\n{device_enumerate}",
+    "tooltip-format-enumerate-connected": "{device_alias}\t{device_address}",
+    "tooltip-format-enumerate-connected-battery": "{device_alias}\t{device_address}\t{device_battery_percentage}%",
     "on-click": "omarchy-launch-bluetooth"
   },
   "pulseaudio": {
@@ -178,6 +186,7 @@
     "format-muted": "",
     "format-icons": {
       "headphone": "",
+      "headset": "",
       "default": ["", "", ""]
     },
     "states": {
@@ -223,6 +232,18 @@
     "tooltip": true,
     "on-click-right": "omarchy-voxtype-config",
     "on-click": "omarchy-voxtype-model"
+  },
+  "custom/idle-indicator": {
+    "on-click": "omarchy-toggle-idle",
+    "exec": "$OMARCHY_PATH/default/waybar/indicators/idle.sh",
+    "signal": 9,
+    "return-type": "json"
+  },
+  "custom/notification-silencing-indicator": {
+    "on-click": "omarchy-toggle-notification-silencing",
+    "exec": "$OMARCHY_PATH/default/waybar/indicators/notification-silencing.sh",
+    "signal": 10,
+    "return-type": "json"
   },
   "tray": {
     "icon-size": 12,

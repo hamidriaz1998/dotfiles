@@ -28,10 +28,14 @@ set -gx DOTNET_ROOT (mise where dotnet@8)
 set -gx LIBVIRT_DEFAULT_URI qemu:///system
 # Android
 set -gx ANDROID_HOME $HOME/Android/Sdk
+set -gx ANDROID_AVD_HOME $HOME/.config/.android/avd
 set -gx PATH $PATH $ANDROID_HOME/cmdline-tools/latest/bin
 set -gx PATH $PATH $ANDROID_HOME/platform-tools
 set -gx PATH $PATH $ANDROID_HOME/emulator/
 set -gx PATH $PATH $ANDROID_HOME/build-tools/34.0.0
+# Android Emulator - Enable GPU acceleration
+set -gx ANDROID_EMULATOR_USE_HOST_GPU 1
+set -gx ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL 1
 # Java
 set -gx JAVA_HOME /usr/lib/jvm/java-21-openjdk
 set -gx PATH $JAVA_HOME/bin $PATH
@@ -43,8 +47,8 @@ fish_add_path -a $HOME/.dotnet/tools
 fish_add_path -a $HOME/go/bin
 fish_add_path -a $DOTNET_ROOT
 
-# --- Rust ---
-source "$HOME/.cargo/env.fish"
+# # --- Rust ---
+# source "$HOME/.cargo/env.fish"
 
 # --- Starship Prompt ---
 if type -q starship
