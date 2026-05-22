@@ -8,25 +8,38 @@
   font-size: 13px;
   font-weight: 500;
   min-height: 0;
-  transition: all 0.25s ease-in-out;
+  transition: 
+    background 0.25s ease,
+    transform 0.2s ease,
+    box-shadow 0.25s ease;
 }
 
 window#waybar {
-  background: linear-gradient(
-    to right,
-    alpha(@background, 0.95),
-    alpha(@background, 0.98)
-  );
+  background: transparent;
   color: @foreground;
-  border-bottom: 1px solid alpha(@foreground, 0.08);
-  box-shadow: 0 1px 8px alpha(@foreground, 0.15);
+  padding: 0;
 }
 
 /* === MODULE CONTAINERS === */
 .modules-left,
 .modules-center,
 .modules-right {
-  margin: 0;
+  margin: 0px;
+  padding: 2px 4px;
+  border-radius: 14px;
+  background: linear-gradient(
+  to bottom,
+  alpha(@background, 0.45),
+  alpha(@background, 0.25)
+  );
+  /* box-shadow: */
+  /*   inset 0 0 0 1px alpha(@foreground, 0.06), */
+  /*   0 4px 12px alpha(@background, 0.4); */
+}
+
+.modules-center{
+  background: transparent;
+  border-radius: 0;
 }
 
 /* === BASE MODULE STYLE === */
@@ -34,7 +47,8 @@ window#waybar {
 #custom-win10,
 #clock,
 #custom-update,
-
+#custom-waycal,
+#custom-weather,
 #cpu,
 #memory,
 #disk,
@@ -49,16 +63,18 @@ window#waybar {
 #backlight-slider,
 #group-tray-expander,
 #privacy {
-  padding: 0 12px;
-  margin: 4px 3px;
-  border-radius: 10px;
-  background: alpha(@foreground, 0.06);
+  padding: 4px 10px;
+  margin: 2px 4px;
+  border-radius: 999px;
+  background: alpha(@background, 0.12);
   color: @foreground;
-  font-size: 15px;
+  font-size: 13px;
 }
 
 #custom-omarchy:hover,
 #custom-win10:hover,
+#custom-waycal:hover,
+#custom-weather:hover,
 #clock:hover,
 #custom-update:hover,
 #custom-screenrecording-indicator:hover,
@@ -74,8 +90,8 @@ window#waybar {
 #tray:hover,
 #backlight:hover,
 #privacy:hover {
-  background: alpha(@foreground, 0.12);
-  box-shadow: inset 0 0 0 1px alpha(@foreground, 0.2);
+  background: alpha(@foreground, 0.18);
+  box-shadow: 0 2px 6px alpha(@background, 0.5);
 }
 
 #custom-omarchy:hover {
@@ -89,6 +105,8 @@ window#waybar {
 #custom-omarchy:focus,
 #custom-win10:focus,
 #clock:focus,
+#custom-waycal:focus,
+#custom-weather:focus,
 #custom-update:focus,
 #cpu:focus,
 #memory:focus,
@@ -104,12 +122,14 @@ window#waybar {
   outline-offset: -2px;
 }
 
+
+/* === WORKSPACES === */
+
 #workspaces button:focus {
   outline: 2px solid alpha(@foreground, 0.4);
   outline-offset: -2px;
 }
 
-/* === WORKSPACES === */
 #workspaces {
   padding: 0 6px;
 }
@@ -117,9 +137,12 @@ window#waybar {
 #workspaces button {
   background: transparent;
   color: @foreground;
-  border-radius: 6px;
-  padding: 0 5px;
-  transition: all 0.25s ease;
+  border-radius: 999px;
+  padding: 2px 10px;
+  min-width: 10px;
+  min-height: 10px;
+  margin: 4px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* Hover */
@@ -130,9 +153,12 @@ window#waybar {
 
 /* Active workspace */
 #workspaces button.active {
-  background: alpha(@foreground, 0.18);
-  color: @foreground;
+  background: @foreground;
+  /* background: @foreground; */
+  color: @background;
+  min-width: 18px;
   font-weight: 600;
+  padding: 2px 16px;
   box-shadow: 0 0 4px 1px alpha(@foreground, 0.25);
 }
 
@@ -140,6 +166,10 @@ window#waybar {
 /* Empty workspace */
 #workspaces button.empty {
   color: alpha(@foreground, 0.4);
+}
+
+#workspaces button.empty.active{
+  color: alpha(@background, 0.4);
 }
 
 /* === WINDOW === */
@@ -157,10 +187,18 @@ window#waybar {
 
 
 /* === CLOCK === */
+#custom-waycal,
+#custom-weather,
 #clock {
   font-weight: 600;
   color: @foreground;
   font-size: 13px;
+}
+
+#custom-waycal:hover,
+#custom-weather:hover,
+#clock:hover{
+  box-shadow: none;
 }
 
 /* === CPU === */
@@ -229,6 +267,7 @@ window#waybar {
 }
 
 /* === BATTERY === */
+
 #battery{
   font-size: 13px;
 }
@@ -350,4 +389,15 @@ tooltip {
 #custom-idle-indicator.active,
 #custom-notification-silencing-indicator.active {
   color: #a55555;
+}
+
+#custom-weather {
+  margin-left: 7.5px;
+  margin-right: 7.5px;
+}
+
+#custom-weather.unavailable {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
 }
