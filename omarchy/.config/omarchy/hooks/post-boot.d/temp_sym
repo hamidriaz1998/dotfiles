@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+
+for hwmon in /sys/class/hwmon/hwmon*; do
+    name=$(cat "$hwmon/name" 2>/dev/null)
+
+    case "$name" in
+        k10temp|coretemp|zenpower|cpu_thermal)
+            ln -sf "$hwmon/temp1_input" /tmp/cpu_temp_input
+            exit 0
+            ;;
+    esac
+done
