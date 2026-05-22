@@ -312,12 +312,12 @@ window#waybar {
 }
 
 #backlight-slider highlight {
-  background: alpha(@foreground, 0.5);
+  background: alpha(@accent, 0.8);
   border-radius: 6px;
 }
 
 #backlight-slider:hover highlight {
-  background: alpha(@foreground, 0.7);
+  background: @accent;
 }
 
 
