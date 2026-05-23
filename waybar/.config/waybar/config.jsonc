@@ -122,10 +122,10 @@
     }
   },
   "temperature": {
-    "hwmon-path": "/sys/devices/platform/coretemp.0/hwmon/hwmon6/temp1_input",
+    "hwmon-path": "/tmp/cpu_temp_input",
     "interval": 5,
-    "warning-threshold": 60,
-    "critical-threshold": 80,
+    "warning-threshold": 70,
+    "critical-threshold": 85,
     "format": "{icon}",
     "format-icons": ["", "", "", "", ""],
     "tooltip-format": "Temperature: {temperatureC}°C"
