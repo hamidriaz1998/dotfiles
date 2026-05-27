@@ -2,9 +2,29 @@
 
 set -euo pipefail
 
-THEME_DIR="$HOME/.config/omarchy/current/theme"
+CONFIG_DIR="$HOME/.config/omarchy/current"
+THEME_DIR="$CONFIG_DIR/theme"
+
 COLORS_FILE="$THEME_DIR/colors.toml"
 OUTPUT_FILE="$THEME_DIR/ltmnight.rasi"
+
+THEME_NAME_FILE="$CONFIG_DIR/theme.name"
+
+CACHE_DIR="$HOME/.cache/hyprltm"
+mkdir -p "$CACHE_DIR"
+
+# Read theme name
+theme_name="$(< "$THEME_NAME_FILE")"
+theme_name="${theme_name// /_}"
+
+CACHE_FILE="$CACHE_DIR/${theme_name}.rasi"
+
+# If cached version exists, use it
+if [[ -f "$CACHE_FILE" ]]; then
+    cp "$CACHE_FILE" "$OUTPUT_FILE"
+    echo "Loaded cached theme: $CACHE_FILE"
+    exit 0
+fi
 
 # Read a value from TOML
 get_color() {
@@ -104,4 +124,7 @@ cat > "$OUTPUT_FILE" <<EOF
 }
 EOF
 
-echo "Generated $OUTPUT_FILE"
+# Save generated theme to cache
+cp "$OUTPUT_FILE" "$CACHE_FILE"
+
+echo "Generated and cached theme: $CACHE_FILE"
