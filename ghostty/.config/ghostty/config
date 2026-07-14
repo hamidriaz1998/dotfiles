@@ -43,7 +43,7 @@
 background-opacity = 0.95
 background-blur = true
 font-family = CaskaydiaMono NF Bold
-font-size = 9
+font-size = 9.5
 window-inherit-working-directory = true
 custom-shader = cursor_blaze.glsl
 custom-shader = shaders/rectangle_boom_cursor.glsl
