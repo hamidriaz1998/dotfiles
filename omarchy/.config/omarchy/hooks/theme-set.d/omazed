@@ -1,0 +1,78 @@
+#!/bin/bash
+
+# omarchy:summary=Sync the current Omarchy theme into a live-reloading Zed theme
+# Ported from https://github.com/hamidriaz1998/omazed, with per-theme caching.
+
+THEME_NAME=$1
+
+omarchy-cmd-present zed || omarchy-cmd-present zeditor || omarchy-cmd-present zed-editor || exit 0
+
+THEME_DIR="$HOME/.config/omarchy/current/theme"
+ZED_THEMES_DIR="$HOME/.config/zed/themes"
+ZED_SETTINGS_PATH="$HOME/.config/zed/settings.json"
+TPL_DIR="$HOME/.config/omarchy/hooks/theme-set-tpls"
+GENERATOR_SCRIPT="$TPL_DIR/omazed-generator.sh"
+TEMPLATE_FILE="$TPL_DIR/omazed-theme.tpl"
+CACHE_DIR="$HOME/.cache/omazed"
+STATE_DIR="$HOME/.local/share/omazed-hook"
+INITIALIZED_MARKER="$STATE_DIR/initialized"
+OUTPUT_FILE="$ZED_THEMES_DIR/omazed.json"
+
+SOURCE_FILE="$THEME_DIR/colors.toml"
+[[ -f $SOURCE_FILE ]] || SOURCE_FILE="$THEME_DIR/alacritty.toml"
+[[ -f $SOURCE_FILE && -f $GENERATOR_SCRIPT && -f $TEMPLATE_FILE ]] || exit 0
+
+APPEARANCE="dark"
+[[ -f $THEME_DIR/light.mode ]] && APPEARANCE="light"
+
+sanitize_filename() {
+  echo "$1" | sed 's/[^a-zA-Z0-9._-]/_/g'
+}
+
+cache_path="$CACHE_DIR/$(sanitize_filename "${THEME_NAME:-default}").json"
+
+is_cache_valid() {
+  [[ -f $cache_path ]] || return 1
+
+  local cache_mtime source_mtime template_mtime light_mtime
+  cache_mtime=$(stat -c %Y "$cache_path" 2>/dev/null || echo 0)
+  source_mtime=$(stat -c %Y "$SOURCE_FILE" 2>/dev/null || echo 0)
+  template_mtime=$(stat -c %Y "$TEMPLATE_FILE" 2>/dev/null || echo 0)
+  light_mtime=0
+  [[ -f $THEME_DIR/light.mode ]] && light_mtime=$(stat -c %Y "$THEME_DIR/light.mode" 2>/dev/null || echo 0)
+
+  [[ $cache_mtime -ge $source_mtime ]] || return 1
+  [[ $cache_mtime -ge $template_mtime ]] || return 1
+  [[ $cache_mtime -ge $light_mtime ]] || return 1
+
+  return 0
+}
+
+mkdir -p "$CACHE_DIR" "$ZED_THEMES_DIR"
+
+if is_cache_valid; then
+  cp "$cache_path" "$OUTPUT_FILE"
+else
+  if bash "$GENERATOR_SCRIPT" "$SOURCE_FILE" "$ZED_THEMES_DIR" "$TEMPLATE_FILE" "$APPEARANCE" >/dev/null; then
+    cp "$OUTPUT_FILE" "$cache_path"
+  fi
+fi
+
+# One-time: point Zed at the "Omazed" theme. Never overrides a later user choice.
+if [[ ! -f $INITIALIZED_MARKER ]]; then
+  mkdir -p "$STATE_DIR" "$(dirname "$ZED_SETTINGS_PATH")"
+
+  if [[ ! -f $ZED_SETTINGS_PATH ]]; then
+    printf '{\n  "theme": "Omazed"\n}\n' >"$ZED_SETTINGS_PATH"
+  elif grep -q '"theme"' "$ZED_SETTINGS_PATH"; then
+    sed -i --follow-symlinks -E \
+      's/"theme"[[:space:]]*:[[:space:]]*"[^"]*"/"theme": "Omazed"/' \
+      "$ZED_SETTINGS_PATH"
+  else
+    sed -i --follow-symlinks -E '0,/\{/{s/\{/{\n  "theme": "Omazed",/}' "$ZED_SETTINGS_PATH"
+  fi
+
+  touch "$INITIALIZED_MARKER"
+fi
+
+exit 0

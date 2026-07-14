@@ -9,23 +9,9 @@ if [[ -e "~/.config/omarchy/themes/$THEME/gtk.css" ]]; then
 fi
 
 
-SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
-THEME_SET_DIR="$SCRIPT_DIR/theme-set.d"
-
-if [[ -d "$THEME_SET_DIR" ]]; then
-    for script in "$THEME_SET_DIR"/*; do
-        [[ -f "$script" && -x "$script" ]] || continue
-
-        echo "Running: $script"
-        "$script"
-    done
-fi
+# Note: theme-set.d/* scripts are NOT run from here. omarchy-hook already
+# runs everything in theme-set.d/ natively (with the theme name forwarded)
+# after this file executes, so looping over it here would run each script
+# twice, once without the theme-name argument.
 
 
-
-
-
-
-# >>> omazed hook - do not edit >>>
-"/usr/bin/omazed" set "$1"
-# <<< omazed hook - do not edit <<<
