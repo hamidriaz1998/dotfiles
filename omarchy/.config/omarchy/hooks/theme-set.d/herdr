@@ -1,0 +1,51 @@
+#!/bin/bash
+
+# omarchy:summary=Sync Omarchy theme colors into herdr's [theme.custom] config
+# See https://herdr.dev/docs/configuration/#theme
+
+omarchy-cmd-present herdr || exit 0
+
+COLORS_FILE="$HOME/.config/omarchy/current/theme/colors.toml"
+TEMPLATE_FILE="$HOME/.config/omarchy/hooks/theme-set-tpls/herdr.toml.tpl"
+HERDR_CONFIG="$HOME/.config/herdr/config.toml"
+
+[[ -f $COLORS_FILE && -f $TEMPLATE_FILE ]] || exit 0
+
+# Build a sed script that maps {{ key }} -> value from colors.toml
+sed_script=$(mktemp)
+while IFS='=' read -r key value; do
+  key="${key//[\"\' ]/}"                # strip quotes and spaces from key
+  [[ $key && $key != \#* ]] || continue # skip empty lines and comments
+  value="${value#*[\"\']}"
+  value="${value%%[\"\']*}" # extract value between quotes (ignores inline comments)
+
+  printf 's|{{ %s }}|%s|g\n' "$key" "$value"
+done <"$COLORS_FILE" >"$sed_script"
+
+rendered=$(sed -f "$sed_script" "$TEMPLATE_FILE")
+rm -f "$sed_script"
+
+mkdir -p "$(dirname "$HERDR_CONFIG")"
+touch "$HERDR_CONFIG"
+
+# Drop any existing [theme.custom] block and trailing blank lines, then
+# append the freshly rendered one
+awk '
+  /^\[theme\.custom\]/ { skip=1; next }
+  skip && /^\[/         { skip=0 }
+  skip                   { next }
+  { lines[++n] = $0 }
+  END {
+    while (n > 0 && lines[n] ~ /^[[:space:]]*$/) n--
+    for (i = 1; i <= n; i++) print lines[i]
+  }
+' "$HERDR_CONFIG" >"$HERDR_CONFIG.tmp" && mv "$HERDR_CONFIG.tmp" "$HERDR_CONFIG"
+
+{
+  echo
+  printf '%s\n' "$rendered"
+} >>"$HERDR_CONFIG"
+
+herdr server reload-config >/dev/null 2>&1
+
+exit 0

@@ -1,0 +1,12 @@
+[theme.custom]
+accent = "{{ accent }}"
+panel_bg = "{{ background }}"
+text = "{{ foreground }}"
+subtext0 = "{{ color7 }}"
+overlay0 = "{{ color8 }}"
+red = "{{ color1 }}"
+green = "{{ color2 }}"
+yellow = "{{ color3 }}"
+blue = "{{ color4 }}"
+mauve = "{{ color5 }}"
+teal = "{{ color6 }}"
