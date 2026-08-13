@@ -56,26 +56,82 @@ hl.device({
 -- See https://wiki.hypr.land/Configuring/Advanced-and-Cool/Gestures/
 hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
 
-local gesture_senstivity = 0.5
-local volume_remainder = 0
-local function adjust_volume(delta_y)
-	volume_remainder = volume_remainder - gesture_senstivity * delta_y
-	local step = volume_remainder >= 0 and math.floor(volume_remainder) or math.ceil(volume_remainder)
-	if step ~= 0 then
-		volume_remainder = volume_remainder - step
-		hl.exec_cmd("omarchy-audio-output-volume " .. (step > 0 and "+" or "") .. step)
+--------------------------------------------------------------------
+-- Vertical swipe -> volume / brightness
+--------------------------------------------------------------------
+
+local function make_axis(cfg)
+	local a = {
+		px_per_step = cfg.px_per_step,
+		deadzone = cfg.deadzone or 12,
+		max_steps = cfg.max_steps or 100,
+		apply = cfg.apply,
+		pos = 0,
+		applied = 0,
+	}
+
+	function a:reset()
+		self.pos, self.applied = 0, 0
 	end
+
+	function a:update(dy)
+		-- e.delta.y is the per-event increment; y grows downward,
+		-- so swiping up must raise the value
+		self.pos = self.pos - (dy or 0)
+
+		local eff = 0
+		if self.pos > self.deadzone then
+			eff = self.pos - self.deadzone
+		elseif self.pos < -self.deadzone then
+			eff = self.pos + self.deadzone
+		end
+
+		local target = math.floor(eff / self.px_per_step + 0.5)
+		if target > self.max_steps then
+			target = self.max_steps
+		elseif target < -self.max_steps then
+			target = -self.max_steps
+		end
+
+		local step = target - self.applied
+		if step ~= 0 then
+			self.applied = target
+			self.apply(step) -- one command carrying the whole delta
+		end
+	end
+
+	return a
 end
 
-local brightness_remainder = 0
-local function adjust_brightness(delta_y)
-	brightness_remainder = brightness_remainder - gesture_senstivity * delta_y
-	local step = brightness_remainder >= 0 and math.floor(brightness_remainder) or math.ceil(brightness_remainder)
-	if step ~= 0 then
-		brightness_remainder = brightness_remainder - step
-		local command = step > 0 and ("+" .. step .. "%") or (math.abs(step) .. "%-")
-		hl.exec_cmd("omarchy-brightness-display " .. command)
-	end
+local volume = make_axis({
+	px_per_step = 8,
+	apply = function(step)
+		hl.exec_cmd("omarchy-audio-output-volume " .. (step > 0 and ("+" .. step) or tostring(step)))
+	end,
+})
+
+local brightness = make_axis({
+	px_per_step = 10,
+	apply = function(step)
+		local cmd = step > 0 and ("+" .. step .. "%") or (math.abs(step) .. "%-")
+		hl.exec_cmd("omarchy-brightness-display " .. cmd)
+	end,
+})
+
+local function bind(fingers, axis)
+	hl.gesture({
+		fingers = fingers,
+		direction = "vertical",
+		action = {
+			start = function(e)
+				axis:reset()
+				axis:update(e.delta and e.delta.y)
+			end,
+			update = function(e)
+				axis:update(e.delta and e.delta.y)
+			end,
+		},
+	})
 end
 
 local function focus_monitor(direction)
@@ -90,23 +146,7 @@ local function move_window_to_workspace(workspace)
 	hl.dispatch(hl.dsp.window.move({ workspace = workspace }))
 end
 
--- Adjust volume with three-finger vertical swipes.
-hl.gesture({
-	fingers = 3,
-	direction = "vertical",
-	action = {
-		start = function(e)
-			volume_remainder = 0
-			adjust_volume(e.delta.y)
-		end,
-		update = function(e)
-			adjust_volume(e.delta.y)
-		end,
-		finish = function()
-			volume_remainder = 0
-		end,
-	},
-})
+-- bind(3, volume)
 
 -- Focus another monitor while holding Super.
 hl.gesture({
@@ -160,23 +200,7 @@ hl.gesture({
 	end,
 })
 
--- Adjust display brightness with four-finger vertical swipes.
-hl.gesture({
-	fingers = 4,
-	direction = "vertical",
-	action = {
-		start = function(e)
-			brightness_remainder = 0
-			adjust_brightness(e.delta.y)
-		end,
-		update = function(e)
-			adjust_brightness(e.delta.y)
-		end,
-		finish = function()
-			brightness_remainder = 0
-		end,
-	},
-})
+-- bind(4, brightness)
 
 -- Enable touchpad gestures for moving focus (helpful on scrolling layout).
 -- hl.gesture({ fingers = 3, direction = "left", action = function() hl.dispatch(hl.dsp.focus({ direction = "l" })) end })
