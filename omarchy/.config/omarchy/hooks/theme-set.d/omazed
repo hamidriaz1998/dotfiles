@@ -7,7 +7,7 @@ THEME_NAME=$1
 
 omarchy-cmd-present zed || omarchy-cmd-present zeditor || omarchy-cmd-present zed-editor || exit 0
 
-THEME_DIR="$HOME/.config/omarchy/current/theme"
+THEME_DIR="$HOME/.local/state/omarchy/current/theme"
 ZED_THEMES_DIR="$HOME/.config/zed/themes"
 ZED_SETTINGS_PATH="$HOME/.config/zed/settings.json"
 TPL_DIR="$HOME/.config/omarchy/hooks/theme-set-tpls"

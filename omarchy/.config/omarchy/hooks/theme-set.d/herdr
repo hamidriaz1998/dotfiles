@@ -5,7 +5,7 @@
 
 omarchy-cmd-present herdr || exit 0
 
-COLORS_FILE="$HOME/.config/omarchy/current/theme/colors.toml"
+COLORS_FILE="$HOME/.local/state/omarchy/current/theme/colors.toml"
 TEMPLATE_FILE="$HOME/.config/omarchy/hooks/theme-set-tpls/herdr.toml.tpl"
 HERDR_CONFIG="$HOME/.config/herdr/config.toml"
 
