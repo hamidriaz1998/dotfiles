@@ -1,0 +1,127 @@
+#!/usr/bin/env bash
+
+# omarchy:summary=Sync Starship colors with the active Omarchy theme
+
+set -euo pipefail
+
+command -v starship >/dev/null 2>&1 || exit 0
+
+THEME_DIR="${OMARCHY_THEME_DIR:-$HOME/.local/state/omarchy/current/theme}"
+COLORS_FILE="$THEME_DIR/colors.toml"
+STARSHIP_CONFIG="${STARSHIP_CONFIG:-$HOME/.config/starship.toml}"
+
+[[ -f "$COLORS_FILE" ]] || exit 0
+[[ -f "$STARSHIP_CONFIG" || -L "$STARSHIP_CONFIG" ]] || exit 0
+
+# Keep a symlinked dotfiles config intact when replacing the generated file.
+STARSHIP_TARGET=$(readlink -f "$STARSHIP_CONFIG")
+[[ -f "$STARSHIP_TARGET" ]] || exit 0
+
+# Theme changes can overlap after Omarchy releases its theme-set lock.
+STARSHIP_LOCK="${XDG_RUNTIME_DIR:-/tmp}/omarchy-starship-theme.lock"
+exec 9>"$STARSHIP_LOCK"
+flock 9
+
+read_theme_color() {
+  local key="$1"
+
+  awk -F '=' -v wanted="$key" '
+    $1 ~ "^[[:space:]]*" wanted "[[:space:]]*$" {
+      value = $2
+      gsub(/[[:space:]"'"'"']/, "", value)
+      print value
+      exit
+    }
+  ' "$COLORS_FILE"
+}
+
+normalize_color() {
+  local value="${1,,}"
+
+  if [[ $value == 0x* ]]; then
+    value="#${value:2}"
+  elif [[ $value =~ ^[[:xdigit:]]{6}$ ]]; then
+    value="#$value"
+  fi
+
+  [[ $value =~ ^#[[:xdigit:]]{6}$ ]] && printf '%s' "$value"
+}
+
+pick_color() {
+  local default="$1"
+  shift
+
+  local key value
+  for key in "$@"; do
+    value=$(normalize_color "$(read_theme_color "$key")") || true
+    if [[ -n $value ]]; then
+      printf '%s' "$value"
+      return
+    fi
+  done
+
+  printf '%s' "$default"
+}
+
+foreground=$(pick_color '#ffffff' foreground bright_foreground color7)
+background=$(pick_color '#000000' background color0)
+current_line=$(pick_color "$background" lighter_background selection_background color8 color0)
+primary=$(pick_color "$current_line" lighter_background selection_background color8)
+
+blue=$(pick_color '#5c9eff' blue bright_blue accent color4)
+cyan=$(pick_color '#56d4dd' cyan bright_cyan color6)
+green=$(pick_color '#9ece6a' green bright_green color2)
+orange=$(pick_color '#e0af68' orange yellow bright_yellow color3)
+pink=$(pick_color '#f5a2e3' magenta bright_magenta color5)
+purple=$(pick_color '#bb9af7' magenta bright_magenta color5)
+red=$(pick_color '#f7768e' red bright_red color1)
+yellow=$(pick_color '#e0af68' yellow bright_yellow color3)
+
+generated=$(mktemp)
+trap 'rm -f "$generated"' EXIT
+
+# Remove the previous generated palette and any manually selected palette. The
+# rest of the user's Starship config, including custom modules and palettes, is
+# left untouched.
+awk '
+  /^# BEGIN OMARCHY THEME PALETTE$/ { skip=1; next }
+  /^# END OMARCHY THEME PALETTE$/ { skip=0; next }
+  skip { next }
+  /^[[:space:]]*palette[[:space:]]*=/ { next }
+  { lines[++n] = $0 }
+  END {
+    while (n > 0 && lines[n] ~ /^[[:space:]]*$/) n--
+    for (i = 1; i <= n; i++) print lines[i]
+  }
+' "$STARSHIP_TARGET" >"$generated"
+
+tmp_config=$(mktemp "${STARSHIP_TARGET}.tmp.XXXXXX")
+trap 'rm -f "$generated" "$tmp_config"' EXIT
+
+{
+  printf 'palette = "omarchy"\n'
+  cat "$generated"
+  cat <<EOF
+
+# BEGIN OMARCHY THEME PALETTE
+[palettes.omarchy]
+foreground = "$foreground"
+background = "$background"
+current_line = "$current_line"
+primary = "$primary"
+box = "$current_line"
+blue = "$blue"
+cyan = "$cyan"
+green = "$green"
+orange = "$orange"
+pink = "$pink"
+purple = "$purple"
+red = "$red"
+yellow = "$yellow"
+status = "$red"
+# END OMARCHY THEME PALETTE
+EOF
+} >"$tmp_config"
+
+chmod --reference="$STARSHIP_TARGET" "$tmp_config"
+mv "$tmp_config" "$STARSHIP_TARGET"
