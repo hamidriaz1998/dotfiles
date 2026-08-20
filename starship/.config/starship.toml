@@ -2,7 +2,7 @@
 
 format = """
 [╭](fg:current_line)\
-$os\
+$username\
 $status\
 $directory\
 $git_branch\
@@ -19,7 +19,7 @@ $rust\
 $c\
 $cmd_duration\
 $time\
-$username\
+$hostname\
 $line_break\
 $character\
 """
@@ -59,10 +59,6 @@ purple = '#BB80B3'
 red = '#F7768E'
 yellow = '#E5C07B'
 status = "#e23140"
-
-[os]
-format = '(fg:current_line)[](fg:blue)[ 󰣇 ](fg:primary bg:blue)[](fg:blue)'
-disabled = false
 
 [status]
 format = "[─](fg:current_line)[](fg:status)[](fg:primary bg:status)[](fg:status bg:box)[ $status](fg:foreground bg:box)[](fg:box)"
@@ -161,6 +157,10 @@ disabled = false
 [username]
 format = '[─](fg:current_line)[](fg:yellow)[  ](fg:primary bg:yellow)[](fg:yellow bg:box)[ $user](fg:foreground bg:box)[](fg:box) '
 show_always = true
+
+[hostname]
+format = '[─](fg:current_line)[](fg:blue)[ 󰒋 ](fg:primary bg:blue)[](fg:blue bg:box)[ $hostname](fg:foreground bg:box)[](fg:box) '
+ssh_only = true
 
 [character]
 format = """
