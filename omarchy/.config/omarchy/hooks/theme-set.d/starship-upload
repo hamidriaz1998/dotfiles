@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+# omarchy:summary=Upload the themed Starship config to the configured VPS hosts
+
+set -u
+
+STARSHIP_CONFIG="${STARSHIP_CONFIG:-$HOME/.config/starship.toml}"
+[[ -f "$STARSHIP_CONFIG" ]] || exit 0
+command -v scp >/dev/null 2>&1 || exit 0
+
+status=0
+for host in myvps myvps2; do
+  if ! timeout 20s scp \
+    -q \
+    -o BatchMode=yes \
+    -o ConnectTimeout=20 \
+    "$STARSHIP_CONFIG" \
+    "$host:~/.config/starship.toml"; then
+    status=1
+  fi
+done
+
+exit "$status"
