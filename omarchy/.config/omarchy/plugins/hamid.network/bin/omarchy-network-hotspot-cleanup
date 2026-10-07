@@ -1,0 +1,48 @@
+#!/bin/bash
+
+# Standalone, manual cleanup for the hotspot feature -- run this directly
+# (not through the network panel) if a crash, a dismissed pkexec prompt, or
+# anything else has left hostapd, dnsmasq, the omarap0 virtual interface,
+# its NAT rules, or the exclusive-mode NetworkManager "Hotspot" connection
+# in a stuck or inconsistent state.
+#
+# Reuses omarchy-network-hotspot-helper's own teardown_ap (the same
+# best-effort, idempotent logic that runs before every concurrent-mode
+# start and on every stop) rather than duplicating it, so this stays in
+# sync with however that logic evolves.
+#
+# Safe to run any time, including when nothing is running -- every step is
+# a no-op if there's nothing to clean up. Never touches the station Wi-Fi
+# connection.
+#
+# Usage: omarchy-network-hotspot-cleanup
+
+set -uo pipefail
+
+AP_IFACE="omarap0"
+CON_NAME="Hotspot"
+# Prefer the root-owned copy that the NetworkManager dispatcher hook
+# (90-omarchy-hotspot) also runs; fall back to the per-user one.
+HELPER=/usr/local/bin/omarchy-network-hotspot-helper
+[[ -x $HELPER ]] || HELPER="$HOME/.local/bin/omarchy-network-hotspot-helper"
+
+echo "Stopping concurrent-mode hotspot (hostapd/dnsmasq/virtual interface/NAT rules)..."
+pkexec "$HELPER" stop-ap "$AP_IFACE"
+
+if nmcli -t -f NAME connection show --active 2>/dev/null | grep -qxF "$CON_NAME"; then
+  echo "Deactivating exclusive-mode hotspot connection..."
+  nmcli connection down "$CON_NAME" >/dev/null
+fi
+
+echo
+echo "Current devices:"
+nmcli device status
+
+echo
+if pgrep -af "hostapd|dnsmasq" 2>/dev/null | grep -E "omarap0|omarchy-hotspot" >/dev/null; then
+  echo "Warning: a hostapd/dnsmasq process referencing the hotspot is still running:"
+  pgrep -af "hostapd|dnsmasq" | grep -E "omarap0|omarchy-hotspot"
+  exit 1
+else
+  echo "No leftover hostapd/dnsmasq processes. Cleanup complete."
+fi

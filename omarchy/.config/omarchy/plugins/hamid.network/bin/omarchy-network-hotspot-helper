@@ -1,0 +1,211 @@
+#!/bin/bash
+
+# Privileged (root) operations for concurrent-mode hotspot: a second virtual
+# Wi-Fi interface, driven by hostapd + dnsmasq directly instead of through
+# NetworkManager, sharing the existing station connection's internet via NAT.
+#
+# Invoked via a single `pkexec` call per action from omarchy-network-hotspot
+# (never run directly) so the whole start/stop sequence needs one
+# authentication instead of prompting per privileged step. `pkexec` does not
+# forward signals to the child it execs, so process lifecycle here is
+# tracked via PID files and explicit `kill`, not by expecting the pkexec
+# wrapper itself to be killable.
+#
+# Usage (as root, via pkexec):
+#   omarchy-network-hotspot-helper start-ap STATION_IFACE AP_IFACE SSID CHANNEL BAND
+#     (reads the Wi-Fi passphrase, one line, from stdin)
+#   omarchy-network-hotspot-helper stop-ap AP_IFACE
+#
+# Why NetworkManager/wpa_supplicant aren't used for the AP side: this
+# adapter's driver (rtw88) advertises a managed+AP interface combination in
+# `iw phy info`, but wpa_supplicant -- which is what NM hands wifi devices
+# to -- cannot actually grab a second interface on the phy ("wpa_supplicant
+# couldn't grab this interface"). hostapd talking to nl80211 directly works
+# fine; confirmed live (AP-ENABLED, beaconing, answering real probe
+# requests) with the station interface staying connected throughout.
+
+set -euo pipefail
+
+RUN_DIR=/run/omarchy-hotspot
+PIDFILE="$RUN_DIR/hostapd.pid"
+DNSMASQ_PIDFILE="$RUN_DIR/dnsmasq.pid"
+CONF="$RUN_DIR/hostapd.conf"
+LEASES="$RUN_DIR/dnsmasq.leases"
+STATION_FILE="$RUN_DIR/station_iface"
+FORWARD_STATE_FILE="$RUN_DIR/ip_forward.orig"
+AP_ADDR="10.42.0.1"
+AP_PREFIX="24"
+AP_SUBNET="10.42.0.0/24"
+UDEV_RULE=/etc/udev/rules.d/90-omarchy-hotspot.rules
+
+# Stops hostapd/dnsmasq, removes the NAT/forward rules and ip_forward
+# override they set, and deletes the vif. Used both for a real `stop` and
+# at the top of `start` -- restarting (e.g. "Save & Restart" on a password
+# change) needs the previous instance fully torn down first, since hostapd
+# still holds the interface open and a bare `iw ... del` against a live vif
+# fails with EBUSY. Safe to call when nothing is running: every step is a
+# no-op in that case.
+teardown_ap() {
+  local ap=$1
+  local station=""
+  [[ -f "$STATION_FILE" ]] && station=$(cat "$STATION_FILE") || true
+
+  if [[ -f "$PIDFILE" ]]; then
+    kill "$(cat "$PIDFILE")" 2>/dev/null || true
+  fi
+  # Belt-and-suspenders: a hostapd left over from an even earlier crash
+  # (pkexec does not forward signals, so a killed `pkexec hostapd` can leave
+  # the real process running) may not be the one in the current pidfile.
+  pkill -f "hostapd -B -P $PIDFILE" 2>/dev/null || true
+
+  if [[ -f "$DNSMASQ_PIDFILE" ]]; then
+    kill "$(cat "$DNSMASQ_PIDFILE")" 2>/dev/null || true
+  fi
+  pkill -f "dnsmasq --pid-file=$DNSMASQ_PIDFILE" 2>/dev/null || true
+
+  iptables -t nat -D POSTROUTING -s "$AP_SUBNET" ! -o "$ap" -j MASQUERADE 2>/dev/null || true
+  iptables -D FORWARD -i "$ap" -j ACCEPT 2>/dev/null || true
+  iptables -D FORWARD -o "$ap" -m state --state RELATED,ESTABLISHED -j ACCEPT 2>/dev/null || true
+  iptables -t mangle -D FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu 2>/dev/null || true
+
+  if [[ -f "$FORWARD_STATE_FILE" ]]; then
+    cat "$FORWARD_STATE_FILE" > /proc/sys/net/ipv4/ip_forward 2>/dev/null || true
+  fi
+
+  rm -f "$PIDFILE" "$DNSMASQ_PIDFILE" "$CONF" "$LEASES" "$LEASES.lock" "$STATION_FILE" "$FORWARD_STATE_FILE"
+
+  # SIGTERM is asynchronous, and this driver (rtw88) can take noticeably
+  # longer than a couple of seconds to actually release a vif after the
+  # process holding it dies -- confirmed live: a 2s retry window still hit
+  # EBUSY, while a plain `iw ... del` run standalone a bit later succeeded
+  # immediately. 15s gives real margin without hanging indefinitely.
+  local tries=75
+  while [[ -d /sys/class/net/$ap ]] && ((tries--)); do
+    iw dev "$ap" del 2>/dev/null && break
+    sleep 0.2
+  done
+  return 0
+}
+
+cmd_start_ap() {
+  local station=$1 ap=$2 ssid=$3 channel=$4 band=$5
+  local password
+  IFS= read -r password || true
+  printf 'progress\tStarting access point…\n' >&2
+
+  mkdir -p "$RUN_DIR"
+  chmod 755 "$RUN_DIR"
+
+  # Idempotent: a no-op if nothing was running, otherwise a clean slate for
+  # "Save & Restart" instead of the EBUSY that a bare `iw ... del` would hit
+  # against a vif hostapd still has open.
+  teardown_ap "$ap"
+  if [[ -d /sys/class/net/$ap ]]; then
+    echo "Error: $ap did not release from the previous session in time." >&2
+    exit 1
+  fi
+  # NetworkManager must never see the vif as its own: it hands it to
+  # wpa_supplicant, which flips it to station mode within milliseconds of
+  # creation. rtw88 allows only one station + one AP, so `ip link set up`
+  # then fails with EBUSY. `nmcli device set managed no` afterwards is too
+  # late (it loses that race); a udev NM_UNMANAGED tag applies at creation.
+  if [[ ! -f $UDEV_RULE ]]; then
+    echo "ACTION==\"add\", SUBSYSTEM==\"net\", KERNEL==\"$ap\", ENV{NM_UNMANAGED}=\"1\"" > "$UDEV_RULE"
+    udevadm control --reload
+  fi
+
+  # A vif cloned from the station's own MAC collides with it (ENOTUNIQ), so
+  # create it with the locally-administered bit flipped.
+  local station_mac
+  station_mac=$(cat "/sys/class/net/$station/address")
+  iw dev "$station" interface add "$ap" type __ap \
+    addr "$(printf '%02x' "$(( 0x${station_mac%%:*} | 0x02 ))"):${station_mac#*:}"
+  udevadm settle
+
+  ip link set dev "$ap" up
+  ip addr flush dev "$ap"
+  ip addr add "$AP_ADDR/$AP_PREFIX" dev "$ap"
+
+  local hw_mode=g
+  [[ $band == a ]] && hw_mode=a
+
+  ( umask 077
+    {
+      printf 'interface=%s\n' "$ap"
+      printf 'driver=nl80211\n'
+      printf 'ssid=%s\n' "$ssid"
+      printf 'hw_mode=%s\n' "$hw_mode"
+      printf 'channel=%s\n' "$channel"
+      printf 'ieee80211n=1\nwmm_enabled=1\n'
+      printf 'wpa=2\n'
+      printf 'wpa_passphrase=%s\n' "$password"
+      printf 'wpa_key_mgmt=WPA-PSK\n'
+      printf 'rsn_pairwise=CCMP\n'
+      printf 'ignore_broadcast_ssid=0\n'
+    } > "$CONF" )
+
+  echo "$station" > "$STATION_FILE"
+  chmod 644 "$STATION_FILE"
+
+  # -B: hostapd's own daemonize, backgrounding only after driver init
+  # succeeds -- unlike `&`, its exit code actually reflects whether the AP
+  # came up.
+  hostapd -B -P "$PIDFILE" "$CONF"
+  chmod 644 "$PIDFILE"
+
+  dnsmasq \
+    --pid-file="$DNSMASQ_PIDFILE" \
+    --interface="$ap" \
+    --bind-dynamic \
+    --except-interface=lo \
+    --dhcp-range=10.42.0.10,10.42.0.200,12h \
+    --dhcp-leasefile="$LEASES" \
+    --no-resolv --no-hosts \
+    --server=1.1.1.1 --server=8.8.8.8
+  chmod 644 "$DNSMASQ_PIDFILE"
+
+  cat /proc/sys/net/ipv4/ip_forward > "$FORWARD_STATE_FILE"
+  chmod 644 "$FORWARD_STATE_FILE"
+  echo 1 > /proc/sys/net/ipv4/ip_forward
+
+  # Scoped narrowly to the AP subnet/interface, and removed by stop-ap with
+  # the identical spec (-D), never a blanket flush -- this box also runs
+  # libvirt's virbr0 and tailscale0, each with their own chains/rules that
+  # must not be touched.
+  iptables -t nat -A POSTROUTING -s "$AP_SUBNET" ! -o "$ap" -j MASQUERADE
+  # Any egress, not just $station: a VPN (tun0) may carry the default route.
+  iptables -A FORWARD -i "$ap" -j ACCEPT
+  iptables -A FORWARD -o "$ap" -m state --state RELATED,ESTABLISHED -j ACCEPT
+  # Tunnel overhead otherwise stalls clients' TCP on full-size segments.
+  iptables -t mangle -A FORWARD -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+
+  # ufw denies incoming by default, which blocks DHCP/DNS to dnsmasq.
+  if command -v ufw >/dev/null && ufw status | grep -q 'Status: active'; then
+    ufw allow in on "$ap" >/dev/null
+  fi
+
+  # Never leave the laptop without its own uplink.
+  printf 'progress\tChecking the Wi-Fi connection…\n' >&2
+  local gw
+  gw=$(ip -4 route show default dev "$station" | awk '{print $3; exit}')
+  sleep 3
+  if [[ -n $gw ]] && ! ping -I "$station" -c3 -W2 "$gw" >/dev/null; then
+    teardown_ap "$ap"
+    nmcli -w 40 device connect "$station" >/dev/null 2>&1 || true
+    echo "Error: $station lost its uplink after the AP started; rolled back." >&2
+    exit 1
+  fi
+}
+
+cmd_stop_ap() {
+  printf 'progress\tStopping…\n' >&2
+  # A user stop also cancels an auto-restart armed by the dispatcher hook.
+  rm -f /run/omarchy-hotspot.paused /run/omarchy-hotspot.paused.station
+  teardown_ap "$1"
+}
+
+case "${1:-}" in
+  start-ap) shift; cmd_start_ap "$@" ;;
+  stop-ap) shift; cmd_stop_ap "$@" ;;
+  *) echo "Usage: $0 {start-ap STATION AP SSID CHANNEL BAND|stop-ap AP}" >&2; exit 1 ;;
+esac

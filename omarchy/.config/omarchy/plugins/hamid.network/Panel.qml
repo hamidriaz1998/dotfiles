@@ -16,6 +16,9 @@ Panel {
   // permits — needed for the toggleNetwork method below.
   manageIpc: false
 
+  // Hotspot scripts ship with this plugin (bin/), not on PATH.
+  readonly property string hotspotScript: String(Qt.resolvedUrl("bin/omarchy-network-hotspot")).replace("file://", "")
+
   // Centralized close so callers can't forget to drop the passphrase prompt.
   function close() {
     root.controller.hide()
@@ -264,7 +267,7 @@ Panel {
   function refreshHotspotStatus() {
     if (hotspotProc.running) return
     hotspotProc.pendingPassword = ""
-    hotspotProc.command = ["omarchy-network-hotspot", "status"]
+    hotspotProc.command = [root.hotspotScript, "status"]
     hotspotProc.running = true
   }
 
@@ -274,7 +277,7 @@ Panel {
     hotspotStderrText = ""
     hotspotProgress = "Starting…"
     hotspotBusy = true
-    var args = ["omarchy-network-hotspot", "start", "--band", hotspotBandDraft || "2.4"]
+    var args = [root.hotspotScript, "start", "--band", hotspotBandDraft || "2.4"]
     var ssid = (hotspotSsidDraft || "").trim()
     if (ssid !== "") { args.push("--ssid"); args.push(ssid) }
     hotspotProc.pendingPassword = hotspotPasswordDraft || ""
@@ -289,7 +292,7 @@ Panel {
     hotspotProgress = "Stopping…"
     hotspotBusy = true
     hotspotProc.pendingPassword = ""
-    hotspotProc.command = ["omarchy-network-hotspot", "stop"]
+    hotspotProc.command = [root.hotspotScript, "stop"]
     hotspotProc.running = true
   }
 

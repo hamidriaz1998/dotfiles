@@ -1,0 +1,463 @@
+#!/bin/bash
+
+# Create, manage, and tear down a local Wi-Fi hotspot. Two independent
+# backends depending on whether the box can share its existing Wi-Fi
+# connection or has to replace it:
+#
+#   exclusive  -- a single NetworkManager AP-mode connection profile named
+#                 "Hotspot", taking over the whole radio (drops any station
+#                 connection riding it).
+#   concurrent -- a second, virtual AP interface ($AP_IFACE) alongside the
+#                 station one, driven directly by hostapd + dnsmasq (see
+#                 omarchy-network-hotspot-helper), sharing the existing
+#                 connection's internet via NAT instead of replacing it.
+#
+# Usage:
+#   omarchy-network-hotspot status
+#   omarchy-network-hotspot start [--ssid NAME] [--band 2.4|5] [--iface IFACE]
+#   omarchy-network-hotspot stop
+#   omarchy-network-hotspot rename <ssid>   (exclusive mode only)
+#   omarchy-network-hotspot password        (exclusive mode only)
+#   omarchy-network-hotspot band <2.4|5>    (exclusive mode only)
+#
+# start/password read the passphrase from stdin (one line, optional -- a
+# blank/absent line generates a random one, or on an existing profile/state
+# keeps whatever is already set). It is never passed as a plain nmcli or
+# hostapd-helper argument, so it never appears in /proc's world-readable
+# process list -- same discipline as omarchy-network-password and the
+# 802.1X connect script in the network panel's Model.js.
+#
+# Which mode `start` picks: some adapters can run a second, virtual AP
+# interface alongside the station one -- `iw phy<N> info` reports this as a
+# `valid interface combinations` entry containing both `managed` and `AP`,
+# constrained to a single channel (`#channels <= 1`). Concurrent mode pins
+# the virtual interface to the station's exact current channel. `--iface`
+# forces the plain single-radio (exclusive) path, e.g. for a dedicated
+# second adapter.
+#
+# Why concurrent mode doesn't go through NetworkManager/wpa_supplicant even
+# though the phy advertises the combo: on this adapter's driver (rtw88),
+# wpa_supplicant -- which is what NM hands wifi devices to -- cannot
+# actually grab a second interface on the phy ("wpa_supplicant couldn't
+# grab this interface"), no matter the timing. hostapd talking to nl80211
+# directly works fine; confirmed live (AP-ENABLED, beaconing, answering
+# real probe requests) with the station interface staying connected
+# throughout. That path also needs the virtual interface to get a MAC
+# address distinct from the station's own -- a bare `iw ... interface add`
+# clones the parent's address, and bringing both up with the same one gets
+# rejected by the kernel (ENOTUNIQ, "Name not unique on network"); the
+# helper flips the locally-administered bit to avoid that.
+#
+# Creating/removing the virtual interface, running hostapd/dnsmasq, and the
+# NAT/forwarding setup are all root operations, routed through
+# omarchy-network-hotspot-helper via a single pkexec call per action (start
+# or stop) since callers here have no terminal to type a sudo password
+# into, and pkexec doesn't forward signals to a child it execs -- so
+# process lifecycle for that side lives in PID files, not in this script.
+
+set -euo pipefail
+
+CON_NAME="Hotspot"
+AP_IFACE="omarap0"
+
+# Must match omarchy-network-hotspot-helper's RUN_DIR. World-readable
+# (0755 dir, 0644 pidfiles) so status checks here don't need root; the
+# passphrase never lives under here (see STATE_DIR below), only in
+# hostapd's own 0600 root-only config while active.
+RUN_DIR=/run/omarchy-hotspot
+HOSTAPD_PIDFILE="$RUN_DIR/hostapd.pid"
+
+# Concurrent-mode's equivalent of the NM "Hotspot" profile: the last-used
+# ssid/password/band, persisted here (not in $RUN_DIR, which is wiped by
+# stop-ap) so a re-start or a "Save & Restart" can default to what was set
+# before. 0700/0600 since password is plaintext at rest -- same exposure
+# profile as NetworkManager's own connection files under
+# /etc/NetworkManager/system-connections/, just user- instead of
+# root-owned.
+STATE_DIR="$HOME/.local/state/omarchy-hotspot"
+
+# Prefer the root-owned copy that the NetworkManager dispatcher hook
+# (90-omarchy-hotspot) also runs; fall back to the per-user one.
+HELPER=/usr/local/bin/omarchy-network-hotspot-helper
+[[ -x $HELPER ]] || HELPER="$HOME/.local/bin/omarchy-network-hotspot-helper"
+# Set by the dispatcher hook while the uplink is down; see cmd_stop.
+PAUSED=/run/omarchy-hotspot.paused
+
+nm_get() {
+  LC_ALL=C nmcli -e no -g "$@" 2>/dev/null
+}
+
+profile_exists() {
+  nmcli -t -f NAME connection show 2>/dev/null | grep -qxF "$CON_NAME"
+}
+
+profile_active() {
+  nmcli -t -f NAME connection show --active 2>/dev/null | grep -qxF "$CON_NAME"
+}
+
+nm_band_for() {
+  case "$1" in
+    2.4) echo "bg" ;;
+    5) echo "a" ;;
+    *) return 1 ;;
+  esac
+}
+
+band_from_nm() {
+  case "$1" in
+    bg) echo "2.4" ;;
+    a) echo "5" ;;
+    *) echo "" ;;
+  esac
+}
+
+# Every Wi-Fi device on the box except our own virtual AP, one per line.
+wifi_devices() {
+  nm_get DEVICE,TYPE device status | awk -F: -v ap="$AP_IFACE" '$1!=ap && $2=="wifi"{print $1}'
+}
+
+# Prefer a Wi-Fi device that isn't already carrying a station connection, so
+# starting an exclusive-mode hotspot doesn't have to drop one. On the common
+# single-radio laptop there is only one candidate either way.
+default_iface() {
+  local device state chosen=""
+  while IFS=: read -r device state; do
+    [[ -z $chosen ]] && chosen=$device
+    if [[ $state != connected* ]]; then
+      echo "$device"
+      return 0
+    fi
+  done < <(nm_get DEVICE,TYPE,STATE device status | awk -F: -v ap="$AP_IFACE" '$1!=ap && $2=="wifi"{print $1":"$3}')
+  echo "$chosen"
+}
+
+# The Wi-Fi device currently carrying a station connection, if any.
+wifi_station_device() {
+  nm_get DEVICE,TYPE,STATE device status | awk -F: -v ap="$AP_IFACE" '$1!=ap && $2=="wifi" && $3=="connected"{print $1; exit}'
+}
+
+# Whether $1's phy advertises a combination allowing `managed` and `AP` at
+# once. A conservative textual check: a false negative just falls back to
+# exclusive mode with its warning, never a false claim of concurrency.
+phy_supports_concurrent() {
+  local dev=$1 phy
+  phy=$(iw dev "$dev" info 2>/dev/null | awk '/wiphy/{print $2; exit}')
+  [[ -n $phy ]] || return 1
+  iw phy "phy$phy" info 2>/dev/null | awk '
+    /valid interface combinations:/ { grab=1; next }
+    grab && /^\t\t/ { print; next }
+    grab { exit }
+  ' | grep -qE '#\{ *managed *\}.*#\{ *AP *\}|#\{ *AP *\}.*#\{ *managed *\}'
+}
+
+# $1's current channel number and NM band token ("bg"/"a"), space-separated.
+station_channel_band() {
+  local dev=$1 channel freq mhz band
+  channel=$(iw dev "$dev" info 2>/dev/null | awk '/channel/{print $2; exit}')
+  freq=$(iw dev "$dev" link 2>/dev/null | awk '/freq:/{print $2; exit}')
+  [[ -n $channel && -n $freq ]] || return 1
+  mhz=${freq%%.*}
+  if ((mhz >= 2400 && mhz < 2500)); then band=bg
+  elif ((mhz >= 4900 && mhz < 5925)); then band=a
+  else return 1
+  fi
+  echo "$channel $band"
+}
+
+# What `start` would do right now: "concurrent <station> <ap-iface> <channel>
+# <band>" to share the existing station connection, or "exclusive - <iface> -
+# -" to take the radio over outright. Always five fields, so callers can
+# `read` it uniformly.
+predicted_mode() {
+  local station channel_band
+  station=$(wifi_station_device)
+  if [[ -n $station ]] && phy_supports_concurrent "$station"; then
+    if channel_band=$(station_channel_band "$station"); then
+      echo "concurrent $station $AP_IFACE $channel_band"
+      return 0
+    fi
+  fi
+  echo "exclusive - $(default_iface) - -"
+}
+
+# Whether the hostapd process behind concurrent mode is actually alive.
+# Checking /proc/$pid directly (rather than e.g. `kill -0`) works without
+# root even though hostapd itself runs as root.
+concurrent_active() {
+  [[ -f "$HOSTAPD_PIDFILE" ]] || return 1
+  local pid
+  pid=$(cat "$HOSTAPD_PIDFILE" 2>/dev/null) || return 1
+  [[ -n $pid && -d "/proc/$pid" ]]
+}
+
+concurrent_exists() {
+  [[ -f "$STATE_DIR/ssid" ]]
+}
+
+# Populates con_ssid/con_password/con_band from the persisted concurrent
+# state (empty for anything missing).
+read_concurrent_state() {
+  con_ssid=""
+  con_password=""
+  con_band=""
+  [[ -f "$STATE_DIR/ssid" ]] && con_ssid=$(<"$STATE_DIR/ssid")
+  [[ -f "$STATE_DIR/password" ]] && con_password=$(<"$STATE_DIR/password")
+  [[ -f "$STATE_DIR/band" ]] && con_band=$(<"$STATE_DIR/band")
+}
+
+write_concurrent_state() {
+  local ssid=$1 password=$2 band=$3
+  mkdir -p "$STATE_DIR"
+  chmod 700 "$STATE_DIR"
+  printf '%s' "$ssid" > "$STATE_DIR/ssid"
+  ( umask 077; printf '%s' "$password" > "$STATE_DIR/password" )
+  printf '%s' "$band" > "$STATE_DIR/band"
+}
+
+# Connected stations on $1 as "name|ip|mac;" entries, names/IPs from the
+# DHCP leases file $2. `iw station dump` needs no root.
+list_clients() {
+  local mac ip name
+  iw dev "$1" station dump 2>/dev/null | awk '/^Station/{print $2}' | while read -r mac; do
+    ip="" name=""
+    read -r ip name < <(awk -v m="$mac" '$2==m{print $3, $4}' "$2" 2>/dev/null) || true
+    [[ $name == "*" ]] && name=""
+    printf '%s|%s|%s;' "$name" "$ip" "$mac"
+  done
+}
+
+print_status() {
+  local exists=no active=no iface="" ssid="" password="" band="" mode=""
+  local channel="" uplink="" clients="" station predicted_band=""
+
+  if concurrent_active; then
+    exists=yes; active=yes; mode=concurrent; iface=$AP_IFACE
+    read_concurrent_state
+    ssid=$con_ssid; password=$con_password; band=$(band_from_nm "$con_band")
+    channel=$(iw dev "$AP_IFACE" info 2>/dev/null | awk '/channel/{print $2; exit}')
+    clients=$(list_clients "$AP_IFACE" "$RUN_DIR/dnsmasq.leases")
+  elif profile_active; then
+    exists=yes; active=yes; mode=exclusive
+    iface=$(nm_get GENERAL.DEVICES connection show "$CON_NAME")
+    ssid=$(nm_get 802-11-wireless.ssid connection show "$CON_NAME")
+    password=$(nmcli --show-secrets -e no -g 802-11-wireless-security.psk connection show "$CON_NAME" 2>/dev/null || true)
+    band=$(band_from_nm "$(nm_get 802-11-wireless.band connection show "$CON_NAME")")
+    clients=$(list_clients "$iface" "/var/lib/NetworkManager/dnsmasq-$iface.leases")
+  else
+    read -r mode _ _ channel predicted_band < <(predicted_mode)
+    [[ $channel == - ]] && channel=""
+    if [[ $mode == concurrent ]]; then
+      iface=$AP_IFACE
+      if concurrent_exists; then
+        exists=yes
+        read_concurrent_state
+        ssid=$con_ssid; password=$con_password
+      fi
+      band=$(band_from_nm "$predicted_band")
+    else
+      iface=$(default_iface)
+      if profile_exists; then
+        exists=yes
+        ssid=$(nm_get 802-11-wireless.ssid connection show "$CON_NAME")
+        password=$(nmcli --show-secrets -e no -g 802-11-wireless-security.psk connection show "$CON_NAME" 2>/dev/null || true)
+        band=$(band_from_nm "$(nm_get 802-11-wireless.band connection show "$CON_NAME")")
+      fi
+    fi
+  fi
+
+  printf 'exists\t%s\n' "$exists"
+  printf 'active\t%s\n' "$active"
+  printf 'iface\t%s\n' "$iface"
+  printf 'ssid\t%s\n' "$ssid"
+  printf 'password\t%s\n' "$password"
+  printf 'band\t%s\n' "$band"
+  printf 'mode\t%s\n' "$mode"
+  station=$(wifi_station_device)
+  [[ -n $station ]] && uplink=$(nm_get GENERAL.CONNECTION device show "$station")
+  printf 'channel\t%s\n' "$channel"
+  printf 'uplink\t%s\n' "$uplink"
+  printf 'clients\t%s\n' "$clients"
+}
+
+random_password() {
+  # Unambiguous alnum alphabet (no 0/O/1/l/I) -- this may be typed by hand on
+  # another device off a QR-less screen.
+  tr -dc 'A-HJ-NP-Za-km-z2-9' </dev/urandom | head -c 12
+}
+
+read_password_stdin() {
+  local pw=""
+  if [[ ! -t 0 ]]; then IFS= read -r pw || true; fi
+  printf '%s' "$pw"
+}
+
+# The passphrase reaches NetworkManager through the scriptable `connection
+# edit` editor over stdin, exactly like the 802.1X connect script in the
+# network panel's Model.js. `nmcli connection add/modify ... wifi-sec.psk
+# <secret>` would instead put it on nmcli's own argv, which is world-readable
+# in /proc for as long as that nmcli process runs -- this avoids that.
+# Exclusive mode only; concurrent mode's passphrase goes to
+# omarchy-network-hotspot-helper the same way (stdin), not through nmcli.
+set_hotspot_password() {
+  local password=$1
+  printf 'set 802-11-wireless-security.key-mgmt wpa-psk\nset 802-11-wireless-security.psk %s\nsave\nquit\n' "$password" |
+    nmcli connection edit "$CON_NAME" >/dev/null 2>&1
+}
+
+cmd_start_exclusive() {
+  local iface=$1 ssid=$2 band_arg=$3
+  [[ -n $iface && $iface != "-" ]] || { echo "Error: no Wi-Fi device available." >&2; exit 1; }
+  local nm_band
+  nm_band=$(nm_band_for "${band_arg:-2.4}") || { echo "Error: band must be 2.4 or 5." >&2; exit 1; }
+
+  # An existing profile keeps its current password unless a new one was
+  # actually typed; a brand-new one always needs one, generating if blank.
+  local password had_profile=no
+  profile_exists && had_profile=yes
+  password=$(read_password_stdin)
+  local set_password=yes
+  [[ $had_profile == yes && -z $password ]] && set_password=no
+  if [[ $set_password == yes ]]; then
+    [[ -n $password ]] || password=$(random_password)
+    ((${#password} >= 8)) || { echo "Error: password must be at least 8 characters." >&2; exit 1; }
+  fi
+
+  if [[ $had_profile == yes ]]; then
+    nmcli connection modify "$CON_NAME" \
+      connection.interface-name "$iface" \
+      802-11-wireless.ssid "$ssid" \
+      802-11-wireless.band "$nm_band" \
+      802-11-wireless.channel 0 >/dev/null
+  else
+    nmcli connection add type wifi ifname "$iface" con-name "$CON_NAME" autoconnect no \
+      802-11-wireless.mode ap 802-11-wireless.band "$nm_band" ssid "$ssid" \
+      ipv4.method shared ipv6.method disabled >/dev/null
+  fi
+
+  [[ $set_password == yes ]] && { set_hotspot_password "$password" || exit 1; }
+
+  # Explicit ifname avoids nmcli guessing among all compatible devices.
+  local up_tries=5
+  until nmcli connection up "$CON_NAME" ifname "$iface" >/dev/null 2>&1; do
+    ((--up_tries)) || { echo "Error: could not activate the hotspot on $iface." >&2; exit 1; }
+    sleep 0.5
+  done
+}
+
+cmd_start_concurrent() {
+  local station=$1 iface=$2 ssid=$3 channel=$4 nm_band=$5
+
+  local password
+  password=$(read_password_stdin)
+  if [[ -z $password ]]; then
+    if concurrent_exists; then
+      read_concurrent_state
+      password=$con_password
+    fi
+    [[ -n $password ]] || password=$(random_password)
+  fi
+  ((${#password} >= 8)) || { echo "Error: password must be at least 8 characters." >&2; exit 1; }
+
+  write_concurrent_state "$ssid" "$password" "$nm_band"
+
+  printf 'progress\tWaiting for authorization…\n' >&2
+  printf '%s\n' "$password" | pkexec "$HELPER" start-ap "$station" "$iface" "$ssid" "$channel" "$nm_band" || {
+    echo "Error: could not start the concurrent hotspot (needs root; the authorization prompt may have been dismissed, or the driver rejected it)." >&2
+    exit 1
+  }
+}
+
+cmd_start() {
+  local ssid="" band_arg="" iface_arg=""
+  while (($#)); do
+    case "$1" in
+      --ssid) ssid=${2:?}; shift 2 ;;
+      --band) band_arg=${2:?}; shift 2 ;;
+      --iface) iface_arg=${2:?}; shift 2 ;;
+      *) echo "Unknown argument: $1" >&2; exit 1 ;;
+    esac
+  done
+
+  local mode station_iface iface channel nm_band
+  read -r mode station_iface iface channel nm_band < <(predicted_mode)
+
+  if [[ -n $iface_arg ]]; then
+    mode=exclusive
+    iface=$iface_arg
+  fi
+
+  [[ -n $ssid ]] || ssid="${CON_NAME}-$(hostname -s 2>/dev/null || echo omarchy)"
+
+  if [[ $mode == exclusive ]]; then
+    cmd_start_exclusive "$iface" "$ssid" "$band_arg"
+  else
+    cmd_start_concurrent "$station_iface" "$iface" "$ssid" "$channel" "$nm_band"
+  fi
+
+  print_status
+}
+
+cmd_stop() {
+  if profile_active; then
+    nmcli connection down "$CON_NAME" >/dev/null
+  fi
+  if concurrent_active || [[ -d /sys/class/net/$AP_IFACE || -f $PAUSED ]]; then
+    printf 'progress\tWaiting for authorization…\n' >&2
+    pkexec "$HELPER" stop-ap "$AP_IFACE" >/dev/null || true
+  fi
+  print_status
+}
+
+cmd_rename() {
+  local ssid=${1:?Usage: omarchy-network-hotspot rename <ssid>}
+  profile_exists || { echo "Error: no hotspot profile yet." >&2; exit 1; }
+  nmcli connection modify "$CON_NAME" 802-11-wireless.ssid "$ssid" >/dev/null
+  if profile_active; then nmcli connection up "$CON_NAME" >/dev/null; fi
+  print_status
+}
+
+cmd_password() {
+  profile_exists || { echo "Error: no hotspot profile yet." >&2; exit 1; }
+  local password
+  password=$(read_password_stdin)
+  [[ -n $password ]] || password=$(random_password)
+  ((${#password} >= 8)) || { echo "Error: password must be at least 8 characters." >&2; exit 1; }
+  set_hotspot_password "$password" || exit 1
+  if profile_active; then nmcli connection up "$CON_NAME" >/dev/null; fi
+  print_status
+}
+
+# Manual override, exclusive mode only -- in concurrent mode the
+# band/channel are pinned to the station's own and this would fight that on
+# the next `start`.
+cmd_band() {
+  local band=${1:?Usage: omarchy-network-hotspot band <2.4|5>}
+  local nm_band
+  nm_band=$(nm_band_for "$band") || { echo "Error: band must be 2.4 or 5." >&2; exit 1; }
+  profile_exists || { echo "Error: no hotspot profile yet." >&2; exit 1; }
+  nmcli connection modify "$CON_NAME" 802-11-wireless.band "$nm_band" >/dev/null
+  if profile_active; then nmcli connection up "$CON_NAME" >/dev/null; fi
+  print_status
+}
+
+case "${1:-status}" in
+  status) print_status ;;
+  start)
+    shift
+    cmd_start "$@"
+    ;;
+  stop) cmd_stop ;;
+  rename)
+    shift
+    cmd_rename "$@"
+    ;;
+  password) cmd_password ;;
+  band)
+    shift
+    cmd_band "$@"
+    ;;
+  *)
+    echo "Usage: omarchy-network-hotspot {status|start|stop|rename|password|band}" >&2
+    exit 1
+    ;;
+esac
