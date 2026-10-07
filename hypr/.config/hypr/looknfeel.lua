@@ -13,17 +13,22 @@
 --   },
 -- })
 
+hl.config({
+	general = {
+		resize_on_border = true,
+	},
+})
 -- https://wiki.hypr.land/Configuring/Basics/Variables/#decoration
--- hl.config({
---   decoration = {
---     -- Use round window corners.
---     rounding = 8,
---
---     -- Dim unfocused windows (0.0 = no dim, 1.0 = fully dimmed).
---     dim_inactive = true,
---     dim_strength = 0.15,
---   },
--- })
+hl.config({
+	decoration = {
+		-- Use round window corners.
+		rounding = 8,
+
+		-- Dim unfocused windows (0.0 = no dim, 1.0 = fully dimmed).
+		dim_inactive = true,
+		dim_strength = 0.15,
+	},
+})
 
 -- https://wiki.hypr.land/Configuring/Basics/Variables/#animations
 -- hl.config({
@@ -55,26 +60,26 @@
 -- active preset.
 
 -- macOS-inspired animations.
-hl.config({
-  animations = {
-    enabled = true,
-  },
-})
-
-hl.curve("easeOutQuint", { type = "bezier", points = { { 0.23, 1 }, { 0.32, 1 } } })
-hl.curve("easeInOut", { type = "bezier", points = { { 0.65, 0 }, { 0.35, 1 } } })
-
-hl.animation({ leaf = "windows", enabled = true, speed = 5, bezier = "easeOutQuint" })
-hl.animation({ leaf = "windowsIn", enabled = true, speed = 5, bezier = "easeOutQuint", style = "popin 92%" })
-hl.animation({ leaf = "windowsOut", enabled = true, speed = 4, bezier = "easeInOut", style = "popin 95%" })
-hl.animation({ leaf = "windowsMove", enabled = true, speed = 5, bezier = "easeOutQuint" })
-hl.animation({ leaf = "fade", enabled = true, speed = 6, bezier = "easeInOut" })
-hl.animation({ leaf = "fadeIn", enabled = true, speed = 5, bezier = "easeOutQuint" })
-hl.animation({ leaf = "fadeOut", enabled = true, speed = 4, bezier = "easeInOut" })
-hl.animation({ leaf = "workspaces", enabled = true, speed = 5, bezier = "easeOutQuint", style = "slide" })
-hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 5, bezier = "easeOutQuint", style = "slide" })
-hl.animation({ leaf = "border", enabled = true, speed = 8, bezier = "default" })
-hl.animation({ leaf = "borderangle", enabled = true, speed = 12, bezier = "default" })
+-- hl.config({
+-- 	animations = {
+-- 		enabled = true,
+-- 	},
+-- })
+--
+-- hl.curve("easeOutQuint", { type = "bezier", points = { { 0.23, 1 }, { 0.32, 1 } } })
+-- hl.curve("easeInOut", { type = "bezier", points = { { 0.65, 0 }, { 0.35, 1 } } })
+--
+-- hl.animation({ leaf = "windows", enabled = true, speed = 5, bezier = "easeOutQuint" })
+-- hl.animation({ leaf = "windowsIn", enabled = true, speed = 5, bezier = "easeOutQuint", style = "popin 92%" })
+-- hl.animation({ leaf = "windowsOut", enabled = true, speed = 4, bezier = "easeInOut", style = "popin 95%" })
+-- hl.animation({ leaf = "windowsMove", enabled = true, speed = 5, bezier = "easeOutQuint" })
+-- hl.animation({ leaf = "fade", enabled = true, speed = 6, bezier = "easeInOut" })
+-- hl.animation({ leaf = "fadeIn", enabled = true, speed = 5, bezier = "easeOutQuint" })
+-- hl.animation({ leaf = "fadeOut", enabled = true, speed = 4, bezier = "easeInOut" })
+-- hl.animation({ leaf = "workspaces", enabled = true, speed = 5, bezier = "easeOutQuint", style = "slide" })
+-- hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 5, bezier = "easeOutQuint", style = "slide" })
+-- hl.animation({ leaf = "border", enabled = true, speed = 8, bezier = "default" })
+-- hl.animation({ leaf = "borderangle", enabled = true, speed = 12, bezier = "default" })
 
 -- My default: snappy animations.
 -- hl.config({ animations = { enabled = true } })
@@ -125,17 +130,17 @@ hl.animation({ leaf = "borderangle", enabled = true, speed = 12, bezier = "defau
 -- hl.animation({ leaf = "borderangle", enabled = true, speed = 10, bezier = "default" })
 
 -- Bouncy and playful.
--- hl.config({ animations = { enabled = true } })
--- hl.curve("bounce", { type = "bezier", points = { { 0.34, 1.56 }, { 0.64, 1 } } })
--- hl.animation({ leaf = "windows", enabled = true, speed = 4, bezier = "bounce" })
--- hl.animation({ leaf = "windowsIn", enabled = true, speed = 5, bezier = "bounce", style = "popin 80%" })
--- hl.animation({ leaf = "windowsOut", enabled = true, speed = 4, bezier = "bounce" })
--- hl.animation({ leaf = "windowsMove", enabled = true, speed = 5, bezier = "bounce" })
--- hl.animation({ leaf = "fade", enabled = true, speed = 4, bezier = "bounce" })
--- hl.animation({ leaf = "workspaces", enabled = true, speed = 5, bezier = "bounce", style = "slidefade 25%" })
--- hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 5, bezier = "bounce", style = "slidefade 20%" })
--- hl.animation({ leaf = "border", enabled = true, speed = 8, bezier = "default" })
--- hl.animation({ leaf = "borderangle", enabled = true, speed = 12, bezier = "default" })
+hl.config({ animations = { enabled = true } })
+hl.curve("bounce", { type = "bezier", points = { { 0.34, 1.56 }, { 0.64, 1 } } })
+hl.animation({ leaf = "windows", enabled = true, speed = 4, bezier = "bounce" })
+hl.animation({ leaf = "windowsIn", enabled = true, speed = 5, bezier = "bounce", style = "popin 80%" })
+hl.animation({ leaf = "windowsOut", enabled = true, speed = 4, bezier = "bounce" })
+hl.animation({ leaf = "windowsMove", enabled = true, speed = 5, bezier = "bounce" })
+hl.animation({ leaf = "fade", enabled = true, speed = 4, bezier = "bounce" })
+hl.animation({ leaf = "workspaces", enabled = true, speed = 5, bezier = "bounce", style = "slidefade 25%" })
+hl.animation({ leaf = "specialWorkspace", enabled = true, speed = 5, bezier = "bounce", style = "slidefade 20%" })
+hl.animation({ leaf = "border", enabled = true, speed = 8, bezier = "default" })
+hl.animation({ leaf = "borderangle", enabled = true, speed = 12, bezier = "default" })
 
 -- KDE style.
 -- hl.config({ animations = { enabled = true } })
