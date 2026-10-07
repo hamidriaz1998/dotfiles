@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "hamid.privacy",
+  "name": "My Privacy",
+  "version": "1.0.0",
+  "author": "hamid",
+  "description": "Screen sharing, microphone and audio playback indicators (port of Waybar's privacy module)",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Privacy.qml"
+  },
+  "barWidget": {
+    "displayName": "My Privacy",
+    "description": "Shows which apps are sharing the screen, using the microphone or playing audio",
+    "category": "System",
+    "allowMultiple": false
+  }
+}
