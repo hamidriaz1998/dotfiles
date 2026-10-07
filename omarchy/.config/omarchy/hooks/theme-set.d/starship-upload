@@ -9,15 +9,19 @@ STARSHIP_CONFIG="${STARSHIP_CONFIG:-$HOME/.config/starship.toml}"
 command -v scp >/dev/null 2>&1 || exit 0
 
 status=0
-for host in myvps myvps2; do
-  if ! timeout 20s scp \
+pids=()
+for host in myvps myvps2 myvps3; do
+  timeout 20s scp \
     -q \
     -o BatchMode=yes \
     -o ConnectTimeout=20 \
     "$STARSHIP_CONFIG" \
-    "$host:~/.config/starship.toml"; then
-    status=1
-  fi
+    "$host:~/.config/starship.toml" &
+  pids+=("$!")
+done
+
+for pid in "${pids[@]}"; do
+  wait "$pid" || status=1
 done
 
 exit "$status"
