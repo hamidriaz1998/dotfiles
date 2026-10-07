@@ -1,3 +1,7 @@
 [submodule "ghostty/.config/ghostty/shaders"]
 	path = ghostty/.config/ghostty/shaders
 	url = https://github.com/sahaj-b/ghostty-cursor-shaders
+[submodule "hypr/.config/hypr/plugins/split-monitor-workspaces"]
+	path = hypr/.config/hypr/plugins/split-monitor-workspaces
+	url = https://github.com/zjeffer/split-monitor-workspaces
+	branch = release/0.56.x

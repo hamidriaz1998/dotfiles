@@ -142,10 +142,6 @@ local function move_window_to_monitor(direction)
 	hl.dispatch(hl.dsp.window.move({ monitor = direction }))
 end
 
-local function move_window_to_workspace(workspace)
-	hl.dispatch(hl.dsp.window.move({ workspace = workspace }))
-end
-
 -- bind(3, volume)
 
 -- Focus another monitor while holding Super.
@@ -166,7 +162,7 @@ hl.gesture({
 	end,
 })
 
--- Move the active window to another monitor while holding Super.
+-- Move the active window (and focus) to another monitor while holding Super.
 hl.gesture({
 	fingers = 4,
 	direction = "left",
@@ -184,19 +180,19 @@ hl.gesture({
 	end,
 })
 
--- Move the active window with four-finger horizontal swipes.
+-- Focus another monitor with four-finger horizontal swipes.
 hl.gesture({
 	fingers = 4,
 	direction = "left",
 	action = function()
-		move_window_to_workspace("+1")
+		focus_monitor("r")
 	end,
 })
 hl.gesture({
 	fingers = 4,
 	direction = "right",
 	action = function()
-		move_window_to_workspace("-1")
+		focus_monitor("l")
 	end,
 })
 
