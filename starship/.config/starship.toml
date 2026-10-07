@@ -1,8 +1,10 @@
+palette = "omarchy"
 "$schema" = 'https://starship.rs/config-schema.json'
 
 format = """
 [╭](fg:current_line)\
 $username\
+$hostname\
 $status\
 $directory\
 $git_branch\
@@ -19,12 +21,10 @@ $rust\
 $c\
 $cmd_duration\
 $time\
-$hostname\
 $line_break\
 $character\
 """
 
-palette = 'catppuccin_mocha'
 # palette = 'tokyo_night'
 add_newline = true
 
@@ -170,3 +170,21 @@ error_symbol = '[×](fg:bold red)'
 
 [profiles]
 transient = """$character"""
+
+# BEGIN OMARCHY THEME PALETTE
+[palettes.omarchy]
+foreground = "#c9d1d9"
+background = "#1a2125"
+current_line = "#222a30"
+primary = "#222a30"
+box = "#222a30"
+blue = "#4ecdc4"
+cyan = "#4ecdc4"
+green = "#8fbc8f"
+orange = "#e67e22"
+pink = "#9b59b6"
+purple = "#9b59b6"
+red = "#e91e63"
+yellow = "#f39c12"
+status = "#e91e63"
+# END OMARCHY THEME PALETTE
