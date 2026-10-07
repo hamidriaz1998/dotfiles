@@ -1,0 +1,84 @@
+--- /usr/share/omarchy/shell/plugins/lock/LockView.qml	2026-08-14 01:55:49.000000000 +0500
++++ LockView.qml	2026-08-14 15:36:26.250675135 +0500
+@@ -1,5 +1,6 @@
+ import QtQuick
+ import QtQuick.Effects
++import Quickshell
+ import qs.Commons
+ import qs.Ui
+ 
+@@ -18,12 +19,19 @@
+   property bool syncingPasswordText: false
+ 
+   readonly property string placeholderText: "Enter Password"
+-  readonly property int fieldWidth: 381
+-  readonly property int fieldHeight: 67
+-  readonly property int outlineThickness: 3
+-  readonly property int fieldFontSize: Math.round(Style.font.heading * 1.125)
+-  readonly property int passwordDotFontSize: Math.round(Style.font.heading * 1.33)
+-  readonly property int passwordDotLetterSpacing: Math.round(Style.font.heading * 0.19)
++  // Geometry mirrors the old hyprlock.conf: a wide, square-cornered field with
++  // a heavy outline, and the clock/date stacked above it.
++  readonly property int fieldWidth: 650
++  readonly property int fieldHeight: 100
++  readonly property int outlineThickness: 4
++  // Offsets above screen center, matching hyprlock's `position = 0, N` labels.
++  readonly property int clockOffset: -250
++  readonly property int dateOffset: -150
++  // Scaled up with the taller field so the placeholder and dots keep hyprlock's
++  // proportions; still theme-derived, so they track [font] base-size.
++  readonly property int fieldFontSize: Math.round(Style.font.heading * 1.7)
++  readonly property int passwordDotFontSize: Math.round(Style.font.heading * 2.0)
++  readonly property int passwordDotLetterSpacing: Math.round(Style.font.heading * 0.28)
+   // Space to keep clear on each side of the field for the fingerprint icon
+   // (icon width plus a gap) so the centered dots never run under it.
+   readonly property real fingerprintReserve: fingerprintConfigured ? Math.round(fingerprintIcon.implicitWidth + 12) : 0
+@@ -119,6 +127,37 @@
+       onPositionChanged: root.wakeRequested()
+     }
+ 
++    // Minute precision is enough: both labels render to the minute, so a
++    // per-second tick would repaint identical text.
++    SystemClock {
++      id: lockClock
++      precision: SystemClock.Minutes
++    }
++
++    Text {
++      id: clockLabel
++      anchors.horizontalCenter: parent.horizontalCenter
++      anchors.verticalCenter: parent.verticalCenter
++      anchors.verticalCenterOffset: root.clockOffset
++      text: Qt.formatDateTime(lockClock.date, "hh:mm AP")
++      color: Color.lock.text
++      font.family: Style.font.family
++      font.pixelSize: 80
++      horizontalAlignment: Text.AlignHCenter
++    }
++
++    Text {
++      id: dateLabel
++      anchors.horizontalCenter: parent.horizontalCenter
++      anchors.verticalCenter: parent.verticalCenter
++      anchors.verticalCenterOffset: root.dateOffset
++      text: Qt.formatDateTime(lockClock.date, "dddd, MMMM dd")
++      color: Color.lock.text
++      font.family: Style.font.family
++      font.pixelSize: 24
++      horizontalAlignment: Text.AlignHCenter
++    }
++
+     BorderSurface {
+       id: inputField
+       width: root.fieldWidth
+@@ -126,7 +165,9 @@
+       anchors.centerIn: parent
+       color: Color.lock.background
+       borderSpec: root.inputBorderSpec
+-      radius: Style.cornerRadius
++      // Pinned square like hyprlock's `rounding = 0`; Style.cornerRadius
++      // tracks Hyprland's rounding and a theme could round this off.
++      radius: 0
+       clip: true
+ 
+       TextInput {
