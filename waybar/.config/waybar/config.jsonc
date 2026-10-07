@@ -14,7 +14,8 @@
     "privacy",
     "clock",
     "custom/update",
-    "custom/screenrecording-indicator"
+    "custom/screenrecording-indicator",
+    "custom/voxtype"
   ],
   "modules-right": [
     "backlight/slider",
