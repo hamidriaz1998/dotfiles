@@ -13,9 +13,6 @@ bind -M insert \el accept-autosuggestion
 # Ctrl+Z to toggle fg/bg
 bind \cz 'fg 2>/dev/null; commandline -f repaint'
 
-# --- Homebrew ---
-eval (/home/linuxbrew/.linuxbrew/bin/brew shellenv)
-
 # --- Environment Variables ---
 # Bun
 set -gx BUN_INSTALL $HOME/.bun
@@ -39,16 +36,25 @@ set -gx ANDROID_EMULATOR_WAIT_TIME_BEFORE_KILL 1
 # Java
 set -gx JAVA_HOME /usr/lib/jvm/java-21-openjdk
 set -gx PATH $JAVA_HOME/bin $PATH
+# Sideshow
+set -gx SIDESHOW_URL https://sideshow.sh
+# Opencode
+set -gx OPENCODE_ENABLE_EXA 1
 
 # --- PATH ---
+# mise shims must be in PATH BEFORE mise activate captures __MISE_ORIG_PATH
+set -gx PATH $HOME/.local/share/mise/shims $PATH
 fish_add_path -a $HOME/.local/bin
 fish_add_path -a $BUN_INSTALL/bin
-fish_add_path -a $HOME/.dotnet/tools
 fish_add_path -a $HOME/go/bin
 fish_add_path -a $DOTNET_ROOT
+fish_add_path -a $HOME/.avm/bin
 
 # # --- Rust ---
 # source "$HOME/.cargo/env.fish"
+
+# mise-en-place
+/usr/bin/mise activate fish | source
 
 # --- Starship Prompt ---
 if type -q starship
@@ -78,12 +84,14 @@ alias ncdu "ncdu --color dark"
 alias ls "eza -lh --group-directories-first --icons=auto"
 alias l ls
 alias la "ls -a"
-alias dotnet "mise x dotnet@8 -- dotnet"
 alias pacsearch "pacman -Slq | fzf --preview 'pacman -Si {}' --layout=reverse"
 alias yaysearch "yay -Slq | fzf --preview 'yay -Si {}' --layout=reverse"
 alias pacinstall "sudo pacman -S --noconfirm"
 alias yayinstall "yay -S --noconfirm"
 alias prisma "bunx --bun prisma"
+alias open "setsid xdg-open"
+alias bottles-cli "flatpak run --command=bottles-cli com.usebottles.bottles"
+alias pandoc "docker run --rm -v (pwd):/data -w /data --user (id -u):(id -g) pandoc/core:latest"
 
 # --- uwu cli helper (custom function) ---
 function uwu
