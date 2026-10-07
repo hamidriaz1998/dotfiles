@@ -1,0 +1,53 @@
+#!/bin/bash
+# Lay out enabled monitors left-to-right in the given order and persist the
+# layout to a marked block in ~/.config/hypr/monitors.lua.
+#
+# Usage: hamid-monitor-arrange [--dry-run] NAME...
+#   --dry-run  print the Lua block instead of writing it and reloading
+
+set -euo pipefail
+
+dry_run=0
+[[ ${1:-} == --dry-run ]] && { dry_run=1; shift; }
+(($#)) || { echo "Usage: hamid-monitor-arrange [--dry-run] NAME..." >&2; exit 1; }
+
+monitor_lua="$HOME/.config/hypr/monitors.lua"
+start="-- hamid.monitor:layout start (written by the Display panel)"
+end="-- hamid.monitor:layout end"
+monitors=$(hyprctl monitors -j)
+
+block="$start"$'\n'
+x=0
+for name in "$@"; do
+  # Names end up inside Lua strings; only plain connector names may pass.
+  [[ $name =~ ^[A-Za-z0-9._-]+$ ]] || { echo "Refusing unsafe monitor name: $name" >&2; exit 1; }
+  m=$(jq -ec --arg n "$name" '.[] | select(.name == $n)' <<<"$monitors") || { echo "Unknown or disabled monitor: $name" >&2; exit 1; }
+  read -r width height refresh scale transform < <(jq -r '"\(.width) \(.height) \(.refreshRate) \(.scale) \(.transform)"' <<<"$m")
+
+  line="hl.monitor({ output = \"$name\", mode = \"${width}x${height}@${refresh}\", position = \"${x}x0\", scale = $scale"
+  ((transform)) && line+=", transform = $transform"
+  block+="$line })"$'\n'
+
+  # Rotated (odd transform) monitors are as wide as they are tall.
+  ((transform % 2)) && width=$height
+  x=$((x + $(awk -v w="$width" -v s="$scale" 'BEGIN { printf "%d", w / s + 0.5 }')))
+done
+block+="$end"
+
+if ((dry_run)); then
+  printf '%s\n' "$block"
+  exit 0
+fi
+
+# Replace the marked block, or append it if this is the first arrangement.
+tmp=$(mktemp)
+awk -v start="$start" -v end="$end" -v block="$block" '
+  $0 == start { print block; skip = 1; done = 1; next }
+  $0 == end { skip = 0; next }
+  !skip { print }
+  END { if (!done) print "\n" block }
+' "$monitor_lua" >"$tmp"
+cat "$tmp" >"$monitor_lua"
+rm -f "$tmp"
+
+hyprctl reload >/dev/null

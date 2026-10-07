@@ -13,7 +13,8 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = omarchy
 -- Portrait/rotated secondary monitor (transform: 1 = 90°, 3 = 270°).
 -- hl.monitor({ output = "DP-2", mode = "preferred", position = "auto", scale = 1, transform = 1 })
 
--- Laptop + KPKUE dual extender (Silicon Motion USB display): left | laptop | right
-hl.monitor({ output = "DVI-I-3", mode = "1920x1080@60", position = "0x0", scale = 1 })
-hl.monitor({ output = "eDP-1", mode = "preferred", position = "1920x0", scale = 1 })
-hl.monitor({ output = "DVI-I-2", mode = "1920x1080@60", position = "3840x0", scale = 1 })
+-- hamid.monitor:layout start (written by the Display panel)
+hl.monitor({ output = "DVI-I-3", mode = "1920x1080@60.00000", position = "0x0", scale = 1 })
+hl.monitor({ output = "eDP-1", mode = "1920x1080@60.05100", position = "1920x0", scale = 1 })
+hl.monitor({ output = "DVI-I-2", mode = "1920x1080@60.00000", position = "3840x0", scale = 1 })
+-- hamid.monitor:layout end
