@@ -13,7 +13,8 @@ Each top-level directory is a stow package. Running `stow <package>` from the re
 | `ghostty/` | `~/.config/ghostty/`           | terminal config; cursor shaders are a git submodule |
 | `hypr/`    | `~/.config/hypr/`               | Hyprland config — only relevant if you're running Hyprland |
 | `waybar/`  | `~/.config/waybar/`             | status bar config |
-| `omarchy/` | `~/.config/omarchy/`           | hooks, backgrounds, branding for an Omarchy install |
+| `omarchy/` | `~/.config/omarchy/`           | hooks, backgrounds, branding and `hamid.*` shell plugins for an Omarchy install |
+| `bin/`     | `~/.local/bin/`                | scripts that must be on `PATH` (hotspot-aware `omarchy-network-*` overrides) |
 | `starship/`| `~/.config/starship.toml`      | prompt config (Catppuccin Mocha) |
 | `touchegg/`| `~/.config/touchegg/`          | touchpad gesture config — only relevant if you have a touchpad |
 | `zed/`     | `~/.config/zed/`                | Zed editor config |

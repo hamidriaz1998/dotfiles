@@ -1,0 +1,15 @@
+#!/bin/bash
+# Hotspot-aware wrapper: omarap0 (concurrent hotspot) has no NetworkManager
+# connection, so build the QR from the hotspot's own state. Same output format
+# as the stock command, which handles every other interface.
+[[ " $* " == *" omarap0 "* ]] || exec /usr/bin/omarchy-network-qr "$@"
+state=~/.local/state/omarchy-hotspot
+ssid=$(<"$state/ssid") password=$(<"$state/password")
+esc() { local v=${1//\\/\\\\}; v=${v//;/\;}; v=${v//,/\\,}; v=${v//:/\\:}; printf '%s' "$v"; }
+[[ " $* " == *" --meta "* ]] && printf 'meta\t%s\t%s\t%s\n' omarap0 WPA "$ssid"
+printf 'WIFI:T:WPA;S:%s;P:%s;;' "$(esc "$ssid")" "$(esc "$password")" | qrencode --type ASCII --margin 4 --output - |
+  while IFS= read -r line; do
+    row=
+    for ((c = 0; c < ${#line}; c += 2)); do [[ ${line:c:2} == *#* ]] && row+=1 || row+=0; done
+    printf '%s\n' "$row"
+  done
