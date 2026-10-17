@@ -539,6 +539,12 @@ Panel {
     anchors.fill: parent
     bar: root.bar
     text: Quickshell.screens.length > 1 ? "󰍺" : "󰍹"
+    // hamid: drawn brightness track (after bjarneo/sashimi) where a backlight
+    // exists; the display glyph stays as the fallback.
+    iconComponent: root.brightnessAvailable ? brightnessMeter : null
+    slotSize: root.brightnessAvailable ? Style.space(24) + Style.space(14) : Style.bar.iconSlot
+    opticalSize: root.brightnessAvailable ? Style.space(24) : Style.bar.iconCanvas
+    tooltipText: root.brightnessAvailable ? "Brightness " + root.brightnessPercent + "%" : ""
     onPressed: function(b) { root.toggle() }
     onWheelMoved: function(delta) {
       if (!root.brightnessAvailable) return
@@ -547,6 +553,45 @@ Panel {
       if (wheel.steps === 0) return
       root.setBrightness(root.brightnessPercent + wheel.steps * 5)
       root.showBrightnessOsd(root.brightnessPercent)
+    }
+  }
+
+  Component {
+    id: brightnessMeter
+
+    Item {
+      anchors.fill: parent
+      rotation: button.vertical ? 90 : 0
+
+      readonly property real fraction: Util.clamp(root.brightnessPercent / 100, 0, 1)
+
+      Rectangle {
+        anchors.verticalCenter: parent.verticalCenter
+        width: parent.width
+        height: Style.space(3)
+        radius: height / 2
+        color: Util.alpha(button.foreground, 0.22)
+      }
+
+      Rectangle {
+        anchors.verticalCenter: parent.verticalCenter
+        width: Math.max(height, Math.round(parent.width * parent.fraction))
+        height: Style.space(3)
+        radius: height / 2
+        color: button.foreground
+        Behavior on width { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+      }
+
+      // Knob, so the track reads as a slider rather than a dash.
+      Rectangle {
+        anchors.verticalCenter: parent.verticalCenter
+        width: Style.space(7)
+        height: width
+        radius: width / 2
+        x: Math.round((parent.width - width) * parent.fraction)
+        color: button.foreground
+        Behavior on x { NumberAnimation { duration: 160; easing.type: Easing.OutCubic } }
+      }
     }
   }
 

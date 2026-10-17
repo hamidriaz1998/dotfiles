@@ -20,10 +20,6 @@ Panel {
   property int profileIndex: 0
   property bool cursorActive: false
   readonly property bool showPercentage: setting("showPercentage", true) === true
-  // With the percentage shown the button paints a text block wider than an
-  // icon, so the open-panel mark takes the painted width instead of the
-  // icon-sized fraction of the slot the fallback assumes.
-  readonly property real openPanelIndicatorWidth: showPercentage && !button.vertical ? button.glyphPaintedWidth : 0
   readonly property bool batteryPresent: {
     var device = UPower.displayDevice
     return !!(device && device.isPresent)
@@ -283,16 +279,87 @@ Panel {
     }
   }
 
-  BarIconButton {
+  // hamid: drawn battery (after bjarneo/sashimi): outline, charge fill and
+  // the percentage. Fill is accent normally, green charging, urgent when low.
+  WidgetButton {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.showPercentage && !vertical
-      ? Math.round(root.batteryFraction * 100) + "% " + root.batteryIcon()
-      : root.batteryIcon()
-    foreground: root.barIconColor
-    slotSize: Style.bar.iconSlot * (root.showPercentage && !vertical ? 2 : 1)
-    tooltipText: ""
+    text: ""
+    labelVisible: false
+    hasVisualContent: true
+    fixedWidth: vertical ? -1 : batteryRow.implicitWidth + scaledHorizontalMargin * 2
+    fixedHeight: vertical ? barSize : -1
+    horizontalMargin: 7
+    tooltipText: root.batteryPresent ? root.modeLabel() : ""
+
+    readonly property color fillColor: root.charging ? root.chargingColor
+      : root.batteryLow ? root.lowBatteryColor : Color.accent
+    readonly property int bodyWidth: Style.space(19)
+    readonly property int bodyHeight: Style.space(10)
+    readonly property real inset: Style.spaceReal(2.5)
+
+    Row {
+      id: batteryRow
+      anchors.centerIn: parent
+      spacing: Style.space(5)
+
+      Item {
+        anchors.verticalCenter: parent.verticalCenter
+        width: button.bodyWidth + Style.space(3)
+        height: button.bodyHeight
+
+        Rectangle {
+          width: button.bodyWidth
+          height: parent.height
+          radius: button.inset
+          color: "transparent"
+          border.width: Math.max(1, Style.spaceReal(1.5))
+          border.color: Util.alpha(button.foreground, 0.85)
+        }
+
+        Rectangle {
+          anchors.right: parent.right
+          anchors.verticalCenter: parent.verticalCenter
+          width: Style.space(2)
+          height: Style.space(4)
+          radius: width / 2
+          color: Util.alpha(button.foreground, 0.85)
+        }
+
+        Rectangle {
+          id: fill
+          anchors.verticalCenter: parent.verticalCenter
+          x: button.inset
+          width: Math.max(height, Math.round((button.bodyWidth - button.inset * 2) * Math.max(0, Math.min(1, root.batteryFraction))))
+          height: button.bodyHeight - button.inset * 2
+          radius: Style.spaceReal(1.5)
+          color: button.fillColor
+
+          Behavior on width { NumberAnimation { duration: 200; easing.type: Easing.OutCubic } }
+          Behavior on color { ColorAnimation { duration: 200 } }
+
+          // Breathes while charging.
+          SequentialAnimation on opacity {
+            running: root.charging && !root.fullyCharged
+            loops: Animation.Infinite
+            onRunningChanged: if (!running) fill.opacity = 1
+            NumberAnimation { to: 0.45; duration: 1100; easing.type: Easing.InOutSine }
+            NumberAnimation { to: 1; duration: 1100; easing.type: Easing.InOutSine }
+          }
+        }
+      }
+
+      Text {
+        visible: root.showPercentage && !button.vertical
+        anchors.verticalCenter: parent.verticalCenter
+        text: String(Math.round(root.batteryFraction * 100))
+        textFormat: Text.PlainText
+        color: root.batteryLow ? root.lowBatteryColor : button.foreground
+        font.family: button.fontFamily
+        font.pixelSize: button.fontSize
+      }
+    }
     onPressed: function(b) {
       if (!root.batteryPresent) return
       if (b === Qt.RightButton) root.togglePercentage()

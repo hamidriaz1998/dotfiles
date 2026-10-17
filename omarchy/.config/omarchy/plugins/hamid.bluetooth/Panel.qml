@@ -669,7 +669,9 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    text: root.connectedBatteryText + root.icon
+    // Vertical bars have no room for the battery text; it moves to the tooltip.
+    text: vertical ? root.icon : root.connectedBatteryText + root.icon
+    tooltipText: vertical && root.connectedBatteryText !== "" ? "Battery " + root.connectedBatteryText.trim() : ""
     foreground: root.barIconColor
     slotSize: Style.bar.iconSlot * (root.connectedBatteryText !== "" && !vertical ? 2 : 1)
     onPressed: function(b) {
