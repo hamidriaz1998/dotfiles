@@ -1,5 +1,5 @@
 --- /usr/share/omarchy/shell/plugins/bar/Bar.qml	2026-09-16 02:11:50.000000000 +0500
-+++ Bar.qml	2026-10-17 22:13:25.461264096 +0500
++++ Bar.qml	2026-10-17 22:27:23.923727914 +0500
 @@ -240,6 +240,13 @@
        // untrusted bar a generic facade factory would let it retrieve another
        // third-party plugin's live service object.
@@ -21,7 +21,7 @@
 +  // hamid: floating islands (after bjarneo/sashimi). barSize stays the pill,
 +  // so every widget keeps its size; the layer surface adds islandInset on the
 +  // screen-edge side only, since the window gap already spaces the other.
-+  readonly property int islandInset: Style.space(8)
++  readonly property int islandInset: Style.space(5)
 +  readonly property int surfaceSize: barSize + islandInset
 +  readonly property int islandOffset: position === "top" || position === "left" ? islandInset : 0
 +  readonly property int islandEdge: Style.space(8)

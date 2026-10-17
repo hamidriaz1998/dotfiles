@@ -565,7 +565,7 @@ Item {
   // hamid: floating islands (after bjarneo/sashimi). barSize stays the pill,
   // so every widget keeps its size; the layer surface adds islandInset on the
   // screen-edge side only, since the window gap already spaces the other.
-  readonly property int islandInset: Style.space(8)
+  readonly property int islandInset: Style.space(5)
   readonly property int surfaceSize: barSize + islandInset
   readonly property int islandOffset: position === "top" || position === "left" ? islandInset : 0
   readonly property int islandEdge: Style.space(8)
