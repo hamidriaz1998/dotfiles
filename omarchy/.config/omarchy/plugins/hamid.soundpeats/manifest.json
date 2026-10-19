@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "id": "hamid.soundpeats",
+  "name": "SoundPEATS",
+  "version": "1.0.0",
+  "author": "hamid",
+  "license": "MIT",
+  "description": "SoundPEATS earbud noise control, toggles, gestures and battery. UI based on 5h3rd1l/omapeats; backend is the peats Go CLI.",
+  "kinds": ["bar-widget"],
+  "entryPoints": {
+    "barWidget": "BarWidget.qml"
+  },
+  "barWidget": {
+    "displayName": "SoundPEATS",
+    "description": "Switch noise modes, gestures and read per-bud battery.",
+    "category": "Audio",
+    "aliases": ["buds", "earbuds", "soundpeats", "anc", "transparency"],
+    "allowMultiple": false,
+    "defaultSection": "right",
+    "defaults": {
+      "showBattery": true,
+      "showMode": false
+    },
+    "schema": [
+      { "key": "showBattery", "type": "boolean", "label": "Show battery percent in the bar" },
+      { "key": "showMode", "type": "boolean", "label": "Show the noise mode name in the bar" }
+    ]
+  }
+}
