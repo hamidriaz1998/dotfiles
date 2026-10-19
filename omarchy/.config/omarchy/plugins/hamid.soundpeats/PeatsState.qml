@@ -6,7 +6,9 @@ import Quickshell.Io
 
 // One `peats watch` backend shared by every bar. It holds the buds' single
 // SPP channel and prints a JSON state line per change. Install it with
-// `go install github.com/hamidriaz1998/peats@latest`.
+// `go install github.com/hamidriaz1998/peats@latest` (~/go/bin/peats is
+// tried first) or any way that puts `peats` on PATH, such as
+// `mise use -g github:hamidriaz1998/peats`.
 Item {
   id: root
 
@@ -28,7 +30,9 @@ Item {
   readonly property int lowBatteryPercent: 20
   readonly property int criticalBatteryPercent: 10
   readonly property int lowBatteryClearPercent: 30
-  readonly property string helperCommand: Quickshell.env("HOME") + "/go/bin/peats"
+  // ~/go/bin is often missing from the shell's PATH, so try it first.
+  readonly property var helperCommand: ["sh", "-c",
+    'p="$HOME/go/bin/peats"; [ -x "$p" ] || p=peats; exec "$p" watch']
 
   // "ZKLXT3PRO_20250428_v0.0.31" -> "v0.0.31"
   readonly property string firmwareVersion: {
@@ -202,7 +206,7 @@ Item {
 
   Process {
     id: watch
-    command: [root.helperCommand, "watch"]
+    command: root.helperCommand
     running: true
     stdinEnabled: true
     stdout: SplitParser { onRead: function(line) { root.applyStatus(line) } }
