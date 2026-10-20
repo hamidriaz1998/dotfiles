@@ -350,6 +350,18 @@ Panel {
         }
       }
 
+      // Plugged in: green bolt while charging, dim bolt when held at full or
+      // at the charge limit. The fill colour alone is lost at low charge.
+      Text {
+        visible: !root.discharging && !button.vertical
+        anchors.verticalCenter: parent.verticalCenter
+        text: "󱐋"
+        textFormat: Text.PlainText
+        color: root.charging ? root.chargingColor : Util.alpha(button.foreground, 0.5)
+        font.family: button.fontFamily
+        font.pixelSize: button.fontSize
+      }
+
       Text {
         visible: root.showPercentage && !button.vertical
         anchors.verticalCenter: parent.verticalCenter
