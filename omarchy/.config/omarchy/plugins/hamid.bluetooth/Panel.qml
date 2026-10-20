@@ -23,6 +23,35 @@ Panel {
 
   readonly property var adapter: Bluetooth.defaultAdapter
 
+  // Quickshell can miss BlueZ's Powered=true when the adapter is re-added on
+  // resume, leaving adapter.enabled false while the radio is on. While it reads
+  // off but is not blocked or disabled, ask BlueZ directly.
+  // ponytail: works around a Quickshell adapter re-add race; drop once upstream fixes it.
+  property bool probedOn: false
+  readonly property bool powered: !!adapter && (adapter.enabled || probedOn)
+  onAdapterChanged: probedOn = false
+
+  Connections {
+    target: root.adapter
+    function onStateChanged() { root.probedOn = false }
+  }
+
+  Timer {
+    interval: 2000
+    repeat: true
+    triggeredOnStart: true
+    running: root.adapter !== null && !root.adapter.enabled && !root.probedOn
+      && root.adapter.state !== BluetoothAdapterState.Disabled
+      && root.adapter.state !== BluetoothAdapterState.Blocked
+    onTriggered: if (!poweredProbe.running) poweredProbe.running = true
+  }
+
+  Process {
+    id: poweredProbe
+    command: ["omarchy-bluetooth-power", "is-on"]
+    onExited: (code) => root.probedOn = code === 0
+  }
+
   // True while this instance owes BlueZ a StopDiscovery: set when it starts
   // discovery (or opens onto a session already running) and cleared once
   // discovery is confirmed down after close. Ownership, not state — BlueZ's
@@ -57,7 +86,7 @@ Panel {
 
   readonly property string icon: {
     if (!adapter) return ""
-    if (!adapter.enabled) return "󰂲"
+    if (!powered) return "󰂲"
     if (connectedDevices.length > 0) return "󰂱"
     return "󰂯"
   }
@@ -89,10 +118,10 @@ Panel {
     "Wrangling codecs",
     "Polishing packets"
   ]
-  readonly property bool rotatingPhrases: adapter && adapter.enabled
+  readonly property bool rotatingPhrases: adapter && powered
   readonly property string heroStatusText: {
     if (!adapter) return "No adapter"
-    if (!adapter.enabled) return "Turned Off"
+    if (!powered) return "Turned Off"
     return activePhrases[phraseIndex % activePhrases.length]
   }
 
@@ -117,7 +146,7 @@ Panel {
   // sits above the device sections so the adapter can be toggled by keyboard
   // even when it is off and no device rows exist.
   readonly property bool headerHasCursor: cursorActive && focusSection === "header"
-  readonly property string toggleHint: root.adapter && root.adapter.enabled ? "Turn Bluetooth off" : "Turn Bluetooth on"
+  readonly property string toggleHint: root.adapter && root.powered ? "Turn Bluetooth off" : "Turn Bluetooth on"
 
   readonly property color hoverFill: bar
     ? Style.hoverFillFor(bar.foreground, Color.accent)
@@ -526,7 +555,7 @@ Panel {
     interval: 1000
     repeat: true
     triggeredOnStart: true
-    running: root.opened && root.adapter !== null && root.adapter.enabled && !root.adapter.discovering
+    running: root.opened && root.adapter !== null && root.powered && !root.adapter.discovering
     onTriggered: {
       root.owesDiscoveryStop = true
       root.adapter.discovering = true
@@ -651,7 +680,7 @@ Panel {
   // would re-read the old state and undo the first.
   function toggleBluetooth() {
     if (!adapter) return
-    Quickshell.execDetached(["omarchy-bluetooth-power", adapter.enabled ? "off" : "on"])
+    Quickshell.execDetached(["omarchy-bluetooth-power", powered ? "off" : "on"])
   }
 
   IpcHandler {
@@ -725,7 +754,7 @@ Panel {
             color: root.bar.foreground
             font.family: root.bar.fontFamily
             font.pixelSize: Style.font.display
-            opacity: root.adapter && root.adapter.enabled ? 1.0 : 0.5
+            opacity: root.adapter && root.powered ? 1.0 : 0.5
           }
 
           // Compact on/off switch on the trailing edge of the hero, and the
@@ -733,7 +762,7 @@ Panel {
           ToggleSwitch {
             id: powerSwitch
             visible: !!root.adapter
-            checked: !!root.adapter && root.adapter.enabled
+            checked: !!root.adapter && root.powered
             hasCursor: root.headerHasCursor
             foreground: root.bar.foreground
             anchors.right: parent.right
@@ -886,7 +915,7 @@ Panel {
         Text {
           visible: root.connectedDevices.length === 0 && root.scrollRows.length === 0
           text: !root.adapter ? "No Bluetooth adapter"
-              : !root.adapter.enabled ? "Turn Bluetooth on to scan"
+              : !root.powered ? "Turn Bluetooth on to scan"
               : "Scanning for devices…"
           color: Qt.darker(root.bar.foreground, 1.5)
           font.family: root.bar.fontFamily
