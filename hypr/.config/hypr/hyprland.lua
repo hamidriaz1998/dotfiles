@@ -21,7 +21,8 @@ require("hypr.input")
 require("hypr.bindings")
 require("hypr.looknfeel")
 require("hypr.autostart")
-require("hypr.split-monitor-workspaces")
+-- Per-monitor workspaces are built into Omarchy now (default/hypr/monitor-workspaces.lua).
+-- require("hypr.split-monitor-workspaces")
 
 -- Toggle config flags dynamically.
 require("default.hypr.toggles")
