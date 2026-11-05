@@ -1,0 +1,115 @@
+--- /usr/share/omarchy/shell/plugins/bar/widgets/Workspaces.qml	2026-11-05 08:14:28.000000000 +0500
++++ Workspaces.qml	2026-11-05 19:43:47.177339786 +0500
+@@ -239,48 +239,103 @@
+     function refresh(): void { root.broadcast("refresh") }
+   }
+ 
++  // hamid: pill look. The focused cell stretches, an accent pill slides under
++  // it and a dark dot marks it; hover lights the others with a chip. Stock
++  // logic above is untouched, so a stock update merges cleanly.
++  readonly property int cellSize: Style.space(26)
++  readonly property int activeCellSize: Style.space(40)
++  readonly property int pillInset: Style.space(5)
++  readonly property var shownCell: {
++    var i = root.workspaceIds().indexOf(root.activeWorkspaceId())
++    return i >= 0 && i < cells.count ? cells.itemAt(i) : null
++  }
++
+   readonly property real trailingGap: root.vertical ? 0 : Style.spaceReal(1.5)
+ 
+   implicitWidth: grid.implicitWidth + trailingGap
+   implicitHeight: grid.implicitHeight
+ 
++  Rectangle {
++    visible: root.shownCell !== null
++    x: root.shownCell ? root.shownCell.x + (root.vertical ? root.pillInset : 0) : 0
++    y: root.shownCell ? root.shownCell.y + (root.vertical ? 0 : root.pillInset) : 0
++    width: root.shownCell ? root.shownCell.width - (root.vertical ? root.pillInset * 2 : 0) : 0
++    height: root.shownCell ? root.shownCell.height - (root.vertical ? 0 : root.pillInset * 2) : 0
++    radius: Math.min(width, height) / 2
++    color: Color.accent
++
++    Behavior on x { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
++    Behavior on y { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
++  }
++
+   GridLayout {
+     id: grid
+     anchors.fill: parent
+     anchors.rightMargin: root.trailingGap
+     columns: root.vertical ? 1 : root.workspaceIds().length
+-    columnSpacing: root.vertical ? 0 : Style.space(1)
+-    rowSpacing: root.vertical ? Style.space(2) : 0
++    columnSpacing: 0
++    rowSpacing: 0
+ 
+     Repeater {
++      id: cells
+       model: root.workspaceIds()
+ 
+       WidgetButton {
++        id: cell
+         required property int modelData
++        required property int index
+ 
+         readonly property var workspace: root.workspaceById(modelData)
+         readonly property bool occupied: workspace !== null && workspace.toplevels.values.length > 0
+         readonly property bool shown: root.monitor !== null && root.monitor.activeWorkspace !== null && root.monitor.activeWorkspace.id === modelData
+         readonly property int slot: root.slotOf(modelData)
+         readonly property bool firstGuest: root.blockOf(modelData) !== root.block && index > 0 && root.blockOf(root.workspaceIds()[index - 1]) === root.block
+-        required property int index
+ 
+         // A gap sets visiting workspaces apart from the monitor's own.
+         Layout.leftMargin: firstGuest && !root.vertical ? Style.space(6) : 0
+         Layout.topMargin: firstGuest && root.vertical ? Style.space(6) : 0
+ 
+         bar: root.bar
+-        text: shown ? root.modeGlyph(root.activeMode) : (slot === root.slots ? "0" : String(slot))
+-        opacity: occupied || shown ? 1 : 0.5
+-        horizontalMargin: 6
+-        verticalPadding: 6
+-        fixedWidth: root.vertical ? root.barSize : Style.space(20)
+-        fixedHeight: root.barSize
++        text: slot === root.slots ? "0" : String(slot)
++        labelVisible: !shown
++        hasVisualContent: true
++        foreground: root.bar ? root.bar.barForeground : Color.foreground
++        opacity: shown || occupied ? 1 : 0.4
++        // Clicking the shown one cycles its layout, as stock does; the glyph
++        // moves to the tooltip.
++        tooltipText: shown ? "Layout: " + root.activeMode : ""
++        fixedWidth: root.vertical ? root.barSize : (shown ? root.activeCellSize : root.cellSize)
++        fixedHeight: root.vertical ? (shown ? root.activeCellSize : root.cellSize) : root.barSize
+         onPressed: function() {
+           if (shown) root.cycleLayout()
+           else root.focusWorkspace(modelData)
+         }
+         onWheelMoved: function(delta) { root.scrollWorkspaces(delta) }
++
++        Behavior on fixedWidth { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
++        Behavior on fixedHeight { NumberAnimation { duration: 280; easing.type: Easing.OutCubic } }
++        Behavior on opacity { NumberAnimation { duration: 200 } }
++
++        Rectangle {
++          anchors.centerIn: parent
++          width: Style.space(7)
++          height: width
++          radius: width / 2
++          color: root.bar ? root.bar.background : Color.background
++          scale: cell.shown ? 1 : 0
++          Behavior on scale { NumberAnimation { duration: 220; easing.type: Easing.OutBack } }
++        }
++
++        // Hover chip on the other workspaces; the shown one has the pill.
++        Rectangle {
++          z: -1
++          anchors.fill: parent
++          anchors.margins: root.pillInset
++          radius: Math.min(width, height) / 2
++          color: Util.alpha(root.bar ? root.bar.barForeground : Color.foreground, 0.12)
++          opacity: cell.tooltipHovered && !cell.shown ? 1 : 0
++          Behavior on opacity { NumberAnimation { duration: 140 } }
++        }
+       }
+     }
+   }
