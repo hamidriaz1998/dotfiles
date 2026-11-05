@@ -542,8 +542,8 @@ Panel {
     // hamid: drawn brightness track (after bjarneo/sashimi) where a backlight
     // exists; the display glyph stays as the fallback.
     iconComponent: root.brightnessAvailable ? brightnessMeter : null
-    slotSize: root.brightnessAvailable ? Style.space(24) + Style.space(14) : Style.bar.iconSlot
-    opticalSize: root.brightnessAvailable ? Style.space(24) : Style.bar.iconCanvas
+    // Drawn icons are scaled to Style.bar.iconSize, so draw at that size.
+    opticalSize: root.brightnessAvailable ? Style.bar.iconSize : Style.bar.iconCanvas
     tooltipText: root.brightnessAvailable ? "Brightness " + root.brightnessPercent + "%" : ""
     onPressed: function(b) { root.toggle() }
     onWheelMoved: function(delta) {

@@ -633,7 +633,7 @@ Panel {
     bar: root.bar
     // hamid: drawn volume meter (after bjarneo/sashimi) instead of a glyph.
     iconComponent: volumeMeter
-    opticalSize: Style.bar.iconSlot - Style.space(14)
+    opticalSize: Style.bar.iconSize
     tooltipText: !root.hasOutput ? "No output" : root.outputMuted ? "Muted" : Math.round(root.outputVolume * 100) + "%"
     onPressed: function(b) {
       if (b === Qt.RightButton) root.toggleAllMuted()
@@ -657,7 +657,7 @@ Panel {
     Row {
       anchors.centerIn: parent
       rotation: button.vertical ? 90 : 0
-      spacing: Style.space(2)
+      spacing: Style.space(1)
 
       Repeater {
         model: [0.25, 0.5, 0.75, 1.0]
@@ -668,8 +668,8 @@ Panel {
           readonly property bool lit: root.hasOutput && !root.outputMuted
             && root.outputVolume + 0.0001 >= modelData - 0.2
 
-          width: Style.space(3)
-          height: Math.max(width, Math.round(Style.space(13) * (0.3 + 0.7 * modelData)))
+          width: Style.space(2)
+          height: Math.max(width, Math.round(Style.space(12) * (0.3 + 0.7 * modelData)))
           anchors.bottom: parent.bottom
           radius: width / 2
           color: lit ? button.foreground : Util.alpha(button.foreground, 0.22)
