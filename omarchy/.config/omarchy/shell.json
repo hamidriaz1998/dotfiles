@@ -1,0 +1,142 @@
+{
+  "bar": {
+    "centerAnchor": "hamid.clock",
+    "id": "hamid.bar",
+    "layout": {
+      "center": [
+        {
+          "id": "hamid.indicators"
+        },
+        {
+          "birthYear": 0,
+          "detailFormat": "ddd d MMM",
+          "format": "h:mm AP",
+          "formatAlt": "d MMMM 'W'ww yyyy",
+          "id": "hamid.clock",
+          "lifeExpectancy": 90,
+          "verticalFormat": "HH\n—\nmm"
+        },
+        {
+          "id": "omarchy.keyboard-layout"
+        },
+        {
+          "id": "omarchy.weather"
+        },
+        {
+          "id": "bylund.presenter-overlay"
+        },
+        {
+          "id": "omarchy.system-update"
+        },
+        {
+          "id": "hamid.privacy",
+          "ignore": [
+            {
+              "name": "cava",
+              "type": "audio-in"
+            },
+            {
+              "name": "obs",
+              "type": "screenshare"
+            },
+            {
+              "name": "pipewire",
+              "type": "camera"
+            }
+          ],
+          "ignoreMonitor": true,
+          "modules": [
+            "screenshare",
+            "camera",
+            "audio-out",
+            "audio-in"
+          ]
+        }
+      ],
+      "left": [
+        {
+          "id": "omarchy.menu"
+        },
+        {
+          "id": "hamid.workspaces"
+        },
+        {
+          "id": "hamid.active-window"
+        }
+      ],
+      "right": [
+        {
+          "id": "hamid.tray"
+        },
+        {
+          "id": "hamid.soundpeats",
+          "showBattery": false,
+          "showMode": false
+        },
+        {
+          "id": "omarchy.tailscale"
+        },
+        {
+          "id": "akitaonrails.ai-usagebar",
+          "lastSelectedEntryId": "anthropic",
+          "showAll": false,
+          "showProvider": false
+        },
+        {
+          "barMetric": "memory",
+          "cpuCoreViewMode": "fill",
+          "gpuGraphEnabled": false,
+          "id": "vitals",
+          "moduleGraphEnabled": {
+            "cpu": true,
+            "disk": true,
+            "memory": true,
+            "network": true
+          }
+        },
+        {
+          "id": "omarchy.spacer"
+        },
+        {
+          "id": "hamid.bluetooth"
+        },
+        {
+          "id": "hamid.audio"
+        },
+        {
+          "id": "hamid.network"
+        },
+        {
+          "id": "hamid.power"
+        },
+        {
+          "id": "hamid.monitor"
+        }
+      ]
+    },
+    "position": "top",
+    "transparent": false
+  },
+  "cloneSourceRestores": [
+    "hamid.lock"
+  ],
+  "disabledPlugins": [
+    "omarchy.lock"
+  ],
+  "idle": {
+    "lock": 300,
+    "screensaver": 150
+  },
+  "plugins": [
+    {
+      "id": "next-key"
+    },
+    {
+      "id": "hamid.lock"
+    },
+    {
+      "id": "nosignal.quattrolitaire"
+    }
+  ],
+  "version": 1
+}
