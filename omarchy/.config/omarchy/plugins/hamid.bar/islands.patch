@@ -1,6 +1,6 @@
---- /usr/share/omarchy/shell/plugins/bar/Bar.qml	2026-09-16 02:11:50.000000000 +0500
-+++ Bar.qml	2026-10-17 22:27:23.923727914 +0500
-@@ -240,6 +240,13 @@
+--- /usr/share/omarchy/shell/plugins/bar/Bar.qml	2026-11-05 08:14:28.000000000 +0500
++++ Bar.qml	2026-11-05 19:38:37.861841282 +0500
+@@ -360,6 +360,13 @@
        // untrusted bar a generic facade factory would let it retrieve another
        // third-party plugin's live service object.
        pluginShell = root.shell.pluginShellForBarEntry(key, moduleName)
@@ -14,7 +14,7 @@
      }
  
      if (pluginBarApis[key]) {
-@@ -555,6 +562,51 @@
+@@ -715,6 +722,50 @@
    readonly property bool vertical: position === "left" || position === "right"
    readonly property int barSize: vertical ? Style.bar.sizeVertical : Style.bar.sizeHorizontal
  
@@ -22,20 +22,20 @@
 +  // so every widget keeps its size; the layer surface adds islandInset on the
 +  // screen-edge side only, since the window gap already spaces the other.
 +  readonly property int islandInset: Style.space(5)
-+  readonly property int surfaceSize: barSize + islandInset
 +  readonly property int islandOffset: position === "top" || position === "left" ? islandInset : 0
 +  readonly property int islandEdge: Style.space(8)
 +  readonly property int islandPadding: Style.space(7)
 +  readonly property int islandGap: Style.space(8)
 +
-+  // A section becomes one pill per run of entries; omarchy.spacer splits runs.
-+  function splitIslandGroups(entries) {
++  // A section becomes one pill per run of widgets; omarchy.spacer splits runs.
++  function splitIslandGroups(keys) {
 +    var groups = [[]]
-+    for (var i = 0; i < entries.length; i++) {
-+      if (canonicalWidgetId(entryId(entries[i])) === "omarchy.spacer") {
++    var entries = layoutWidgets.entries
++    for (var i = 0; i < keys.length; i++) {
++      if (canonicalWidgetId(entryId(entries[keys[i]])) === "omarchy.spacer") {
 +        if (groups[groups.length - 1].length) groups.push([])
 +      } else {
-+        groups[groups.length - 1].push(entries[i])
++        groups[groups.length - 1].push(keys[i])
 +      }
 +    }
 +    return groups.filter(function(group) { return group.length > 0 })
@@ -47,11 +47,10 @@
 +  }
 +
 +  // Length of the trailing run of `ownIsland` widgets in one ModuleList. Read
-+  // from that list's own Row, so each monitor measures only its own bar.
++  // from that list's own slots, so each monitor measures only its own bar.
 +  function trailingOwnIslandExtent(list) {
-+    var row = list ? list.item : null
-+    if (!row) return 0
-+    var kids = row.children
++    if (!list) return 0
++    var kids = list.children
 +    var total = 0
 +    for (var i = kids.length - 1; i >= 0; i--) {
 +      var extent = vertical ? kids[i].height : kids[i].width
@@ -63,10 +62,10 @@
 +    return total
 +  }
 +
-   function normalizePosition(value) {
-     return BarModel.normalizePosition(value)
-   }
-@@ -1231,6 +1283,60 @@
+   // Display cutouts (a camera notch) the platform's own package describes in
+   // the fixed platform root, which no environment variable moves. Most machines
+   // have none. It is read as the shell starts (blockLoading), so a bar surface
+@@ -1707,6 +1758,67 @@
      }
    }
  
@@ -75,9 +74,9 @@
 +  component IslandSurface: BorderSurface {
 +    property bool panelOpen: false
 +
-+    color: root.transparent ? "transparent" : root.background
++    color: root.transparent ? "transparent" : (root.glassy ? root.glassBackground : root.background)
 +    borderSpec: Border.flat(panelOpen
-+      ? Color.accent
++      ? Commons.Color.accent
 +      : Util.alpha(root.barForeground, root.transparent ? 0.34 : 0.12), 1)
 +    radius: Math.min(width, height) / 2
 +
@@ -87,14 +86,17 @@
 +  component IslandGroups: Grid {
 +    id: groups
 +
-+    property var entries: []
++    property var keys: []
 +    property string region: ""
++    property string fixedEdge: "center"
++    property var window: null
++    property var pool: null
 +
 +    columns: root.vertical ? 1 : 64
 +    spacing: root.islandGap
 +
 +    Repeater {
-+      model: root.splitIslandGroups(groups.entries)
++      model: root.splitIslandGroups(groups.keys)
 +
 +      Item {
 +        id: island
@@ -102,8 +104,8 @@
 +        required property var modelData
 +        readonly property bool filled: list.width > 0 && list.height > 0
 +
-+        // Collapse rather than hide: a hidden parent would deactivate the
-+        // ModuleList (its `active` follows `visible`) and never come back.
++        // Collapse rather than hide: a hidden parent would hide the
++        // ModuleList and it would never make its slots again.
 +        width: !filled ? 0 : root.vertical ? root.barSize : list.width + root.islandPadding * 2
 +        height: !filled ? 0 : root.vertical ? list.height + root.islandPadding * 2 : root.barSize
 +
@@ -115,8 +117,12 @@
 +
 +        ModuleList {
 +          id: list
-+          entries: island.modelData
++          // Repeater hands arrays over as non-arrays, which sectionRows rejects.
++          keys: Array.prototype.slice.call(island.modelData)
 +          region: groups.region
++          fixedEdge: groups.fixedEdge
++          window: groups.window
++          pool: groups.pool
 +          x: root.vertical ? 0 : root.islandPadding
 +          y: root.vertical ? root.islandPadding : 0
 +        }
@@ -127,43 +133,56 @@
    component BarPanel: PanelWindow {
      id: barWindow
  
-@@ -1248,10 +1354,10 @@
-     }
+@@ -1724,7 +1836,7 @@
+     // An explicit zone instead of Auto: the reserved area stays the strip's
+     // thickness though the window spans its screen.
+     exclusionMode: root.barHidden ? ExclusionMode.Ignore : ExclusionMode.Normal
+-    exclusiveZone: thickness
++    exclusiveZone: surfaceThickness
  
-     margins {
--      top: root.barHidden && root.position === "top" ? -root.barSize : 0
--      bottom: root.barHidden && root.position === "bottom" ? -root.barSize : 0
--      left: root.barHidden && root.position === "left" ? -root.barSize : 0
--      right: root.barHidden && root.position === "right" ? -root.barSize : 0
-+      top: root.barHidden && root.position === "top" ? -root.surfaceSize : 0
-+      bottom: root.barHidden && root.position === "bottom" ? -root.surfaceSize : 0
-+      left: root.barHidden && root.position === "left" ? -root.surfaceSize : 0
-+      right: root.barHidden && root.position === "right" ? -root.surfaceSize : 0
-     }
+     // While this window's widget or bar-move drag is live, the whole surface
+     // takes input (mask below), so the pointer never leaves the bar surface
+@@ -1778,6 +1890,8 @@
  
-     anchors {
-@@ -1261,9 +1367,10 @@
-       right: root.position === "right" || !root.vertical
-     }
+     // The same thickness the bar publishes for its screen (screenBarSizes).
+     readonly property int thickness: root.thicknessFor(screen)
++    // hamid: the strip is the pill plus the inset on the screen-edge side.
++    readonly property int surfaceThickness: thickness + root.islandInset
+     // Where the center box starts along the bar, set by the drawn center
+     // sections. Hovering past it, over the clock, its trailing widgets and the
+     // right section, leaves the indicator peek shut.
+@@ -1828,15 +1942,12 @@
+     Item {
+       id: barStrip
  
--    implicitWidth: root.vertical ? root.barSize : 0
--    implicitHeight: root.vertical ? 0 : root.barSize
--    color: root.transparent ? "transparent" : root.background
-+    implicitWidth: root.vertical ? root.surfaceSize : 0
-+    implicitHeight: root.vertical ? 0 : root.surfaceSize
-+    // The pills carry the paint; the strip between them shows the wallpaper.
-+    color: "transparent"
-     surfaceFormat.opaque: false
-     WlrLayershell.namespace: "omarchy-bar"
-     WlrLayershell.layer: WlrLayer.Top
-@@ -1355,16 +1462,22 @@
+-      x: root.position === "right" ? parent.width - barWindow.thickness : 0
+-      y: root.position === "bottom" ? parent.height - barWindow.thickness : 0
+-      width: root.vertical ? barWindow.thickness : parent.width
+-      height: root.vertical ? parent.height : barWindow.thickness
++      x: root.position === "right" ? parent.width - barWindow.surfaceThickness : 0
++      y: root.position === "bottom" ? parent.height - barWindow.surfaceThickness : 0
++      width: root.vertical ? barWindow.surfaceThickness : parent.width
++      height: root.vertical ? parent.height : barWindow.surfaceThickness
  
-         CenterModules { anchors.fill: parent }
+-      Rectangle {
+-        anchors.fill: parent
+-        color: root.transparent ? "transparent" : (root.glassy ? root.glassBackground : root.background)
+-      }
++      // hamid: no strip paint; the islands carry it.
+ 
+       Loader {
+         anchors.fill: parent
+@@ -1946,21 +2057,29 @@
+           drawn: !barWindow.centerBesideRight
+         }
  
 -        LeftModules {
 +        IslandGroups {
-+          entries: root.layoutEntries("left")
++          keys: root.layoutWidgets.sections.left
 +          region: "left"
++          fixedEdge: "start"
+           window: barWindow
+           pool: horizontalPool
            anchors.left: parent.left
 -          anchors.leftMargin: Style.space(8)
 -          anchors.verticalCenter: parent.verticalCenter
@@ -174,8 +193,13 @@
  
 -        RightModules {
 +        IslandGroups {
-+          entries: root.layoutEntries("right")
++          id: rightModules
++          keys: root.layoutWidgets.sections.right
 +          region: "right"
++          fixedEdge: "end"
+           window: barWindow
+           pool: horizontalPool
+-          id: rightModules
            anchors.right: parent.right
 -          anchors.rightMargin: Style.space(8)
 -          anchors.verticalCenter: parent.verticalCenter
@@ -183,16 +207,29 @@
 +          anchors.top: parent.top
 +          anchors.topMargin: root.islandOffset
          }
+ 
+         // Where a display notch covers the middle of the bar, the center
+@@ -1976,7 +2095,9 @@
+           anchors.right: rightModules.left
+           anchors.rightMargin: Style.space(4)
+           anchors.top: parent.top
++          anchors.topMargin: root.islandOffset
+           anchors.bottom: parent.bottom
++          anchors.bottomMargin: root.islandInset - root.islandOffset
+         }
        }
      }
-@@ -1377,16 +1490,22 @@
- 
-         CenterModules { anchors.fill: parent }
+@@ -1995,20 +2116,28 @@
+           pool: verticalPool
+         }
  
 -        LeftModules {
 +        IslandGroups {
-+          entries: root.layoutEntries("left")
++          keys: root.layoutWidgets.sections.left
 +          region: "left"
++          fixedEdge: "start"
+           window: barWindow
+           pool: verticalPool
            anchors.top: parent.top
 -          anchors.topMargin: Style.space(8)
 -          anchors.horizontalCenter: parent.horizontalCenter
@@ -203,8 +240,11 @@
  
 -        RightModules {
 +        IslandGroups {
-+          entries: root.layoutEntries("right")
++          keys: root.layoutWidgets.sections.right
 +          region: "right"
++          fixedEdge: "end"
+           window: barWindow
+           pool: verticalPool
            anchors.bottom: parent.bottom
 -          anchors.bottomMargin: Style.space(8)
 -          anchors.horizontalCenter: parent.horizontalCenter
@@ -214,196 +254,76 @@
          }
        }
      }
-@@ -1497,7 +1616,7 @@
+@@ -2247,7 +2376,7 @@
  
          required property string modelData
          readonly property bool edgeVertical: modelData === "left" || modelData === "right"
 -        readonly property int edgeSize: edgeVertical ? Style.bar.sizeVertical : Style.bar.sizeHorizontal
-+        readonly property int edgeSize: root.surfaceSize
++        readonly property int edgeSize: (edgeVertical ? Style.bar.sizeVertical : Style.bar.sizeHorizontal) + root.islandInset
  
          x: modelData === "right" ? parent.width - edgeSize : 0
          y: modelData === "bottom" ? parent.height - edgeSize : 0
-@@ -1521,16 +1640,6 @@
-     return idx === -1 ? null : entries[idx]
+@@ -2265,18 +2394,6 @@
+     }
    }
  
 -  component LeftModules: ModuleList {
--    entries: root.layoutEntries("left")
+-    keys: root.layoutWidgets.sections.left
 -    region: "left"
+-    fixedEdge: "start"
 -  }
 -
 -  component RightModules: ModuleList {
--    entries: root.layoutEntries("right")
+-    keys: root.layoutWidgets.sections.right
 -    region: "right"
+-    fixedEdge: "end"
 -  }
 -
+   // The gesture area under the whole bar, with the center sections drawn over
+   // it in the middle of it.
    component CenterModules: Item {
-     id: centerRoot
+@@ -2292,6 +2409,10 @@
  
-@@ -1547,6 +1656,7 @@
-       id: horizontalCenterModules
- 
-       Item {
-+        id: horizontalCenter
-         anchors.fill: parent
- 
-         CenterGestureArea { anchors.fill: parent }
-@@ -1555,14 +1665,41 @@
-           onHoveredChanged: root.setCenterSectionHovered(hovered)
-         }
- 
-+        // The center pill wraps before-list, anchor and after-list, minus the
-+        // trailing run of widgets that paint their own island (privacy).
-+        IslandSurface {
-+          readonly property real contentLeft: centerRoot.hasAnchor
-+            ? (centerBeforeModules.width > 0 ? centerBeforeModules.x : centerAnchorModule.x)
-+            : centerModules.x
-+          readonly property real contentRight: centerRoot.hasAnchor
-+            ? (centerAfterModules.width > 0 ? centerAfterModules.x + centerAfterModules.width : centerAnchorModule.x + centerAnchorModule.width)
-+            : centerModules.x + centerModules.width
-+          readonly property real ownIslandRun: root.trailingOwnIslandExtent(centerRoot.hasAnchor ? centerAfterModules : centerModules)
-+          readonly property real pillRight: ownIslandRun > 0
-+            ? Math.min(contentRight, (centerRoot.hasAnchor ? centerAfterModules.x + centerAfterModules.width : contentRight) - ownIslandRun)
-+            : contentRight
-+
-+          visible: pillRight > contentLeft
-+          panelOpen: !!root.activePopout && root.activePopout.ownIsland !== true
-+            && root.itemWithin(root.activePopout, horizontalCenter)
-+          x: Math.round(contentLeft) - root.islandPadding
-+          y: root.islandOffset
-+          width: Math.round(pillRight - contentLeft) + root.islandPadding * 2
-+          height: root.barSize
-+        }
-+
-         ModuleList {
-+          id: centerModules
-           visible: !centerRoot.hasAnchor
-           entries: centerRoot.entries
-           region: "center"
--          anchors.centerIn: parent
-+          anchors.horizontalCenter: parent.horizontalCenter
-+          anchors.top: parent.top
-+          anchors.topMargin: root.islandOffset
-         }
- 
-         ModuleList {
-+          id: centerBeforeModules
-           visible: centerRoot.hasAnchor
-           entries: root.entriesBefore(centerRoot.entries, root.centerAnchor)
-           region: "center"
-@@ -1575,10 +1712,13 @@
-           visible: centerRoot.hasAnchor
-           entry: centerRoot.anchorEntry
-           region: "center"
--          anchors.centerIn: parent
-+          anchors.horizontalCenter: parent.horizontalCenter
-+          anchors.top: parent.top
-+          anchors.topMargin: root.islandOffset
-         }
- 
-         ModuleList {
-+          id: centerAfterModules
-           visible: centerRoot.hasAnchor
-           entries: root.entriesAfter(centerRoot.entries, root.centerAnchor)
-           region: "center"
-@@ -1592,6 +1732,7 @@
-       id: verticalCenterModules
- 
-       Item {
-+        id: verticalCenter
-         anchors.fill: parent
- 
-         CenterGestureArea { anchors.fill: parent }
-@@ -1600,35 +1741,63 @@
-           onHoveredChanged: root.setCenterSectionHovered(hovered)
-         }
- 
-+        IslandSurface {
-+          readonly property real contentTop: centerRoot.hasAnchor
-+            ? (vCenterBeforeModules.height > 0 ? vCenterBeforeModules.y : vCenterAnchorModule.y)
-+            : vCenterModules.y
-+          readonly property real contentBottom: centerRoot.hasAnchor
-+            ? (vCenterAfterModules.height > 0 ? vCenterAfterModules.y + vCenterAfterModules.height : vCenterAnchorModule.y + vCenterAnchorModule.height)
-+            : vCenterModules.y + vCenterModules.height
-+          readonly property real ownIslandRun: root.trailingOwnIslandExtent(centerRoot.hasAnchor ? vCenterAfterModules : vCenterModules)
-+          readonly property real pillBottom: ownIslandRun > 0
-+            ? Math.min(contentBottom, (centerRoot.hasAnchor ? vCenterAfterModules.y + vCenterAfterModules.height : contentBottom) - ownIslandRun)
-+            : contentBottom
-+
-+          visible: pillBottom > contentTop
-+          panelOpen: !!root.activePopout && root.activePopout.ownIsland !== true
-+            && root.itemWithin(root.activePopout, verticalCenter)
-+          x: root.islandOffset
-+          y: Math.round(contentTop) - root.islandPadding
-+          width: root.barSize
-+          height: Math.round(pillBottom - contentTop) + root.islandPadding * 2
-+        }
-+
-         ModuleList {
-+          id: vCenterModules
-           visible: !centerRoot.hasAnchor
-           entries: centerRoot.entries
-           region: "center"
--          anchors.centerIn: parent
-+          anchors.verticalCenter: parent.verticalCenter
-+          anchors.left: parent.left
-+          anchors.leftMargin: root.islandOffset
-         }
- 
-         ModuleList {
-+          id: vCenterBeforeModules
-           visible: centerRoot.hasAnchor
-           entries: root.entriesBefore(centerRoot.entries, root.centerAnchor)
-           region: "center"
--          anchors.bottom: centerAnchorModule.top
--          anchors.horizontalCenter: centerAnchorModule.horizontalCenter
-+          anchors.bottom: vCenterAnchorModule.top
-+          anchors.horizontalCenter: vCenterAnchorModule.horizontalCenter
-         }
- 
-         ModuleSlot {
--          id: centerAnchorModule
-+          id: vCenterAnchorModule
-           visible: centerRoot.hasAnchor
-           entry: centerRoot.anchorEntry
-           region: "center"
--          anchors.centerIn: parent
-+          anchors.verticalCenter: parent.verticalCenter
-+          anchors.left: parent.left
-+          anchors.leftMargin: root.islandOffset
-         }
- 
-         ModuleList {
-+          id: vCenterAfterModules
-           visible: centerRoot.hasAnchor
-           entries: root.entriesAfter(centerRoot.entries, root.centerAnchor)
-           region: "center"
--          anchors.top: centerAnchorModule.bottom
--          anchors.horizontalCenter: centerAnchorModule.horizontalCenter
-+          anchors.top: vCenterAnchorModule.bottom
-+          anchors.horizontalCenter: vCenterAnchorModule.horizontalCenter
-         }
-       }
+     CenterSections {
+       anchors.fill: parent
++      anchors.topMargin: root.vertical ? 0 : root.islandOffset
++      anchors.bottomMargin: root.vertical ? 0 : root.islandInset - root.islandOffset
++      anchors.leftMargin: root.vertical ? root.islandOffset : 0
++      anchors.rightMargin: root.vertical ? root.islandInset - root.islandOffset : 0
+       window: centerRoot.window
+       pool: centerRoot.pool
+       active: centerRoot.drawn
+@@ -2333,6 +2454,29 @@
+       function onCenterSectionRevealHeldChanged() { sections.syncPeekEdge() }
      }
-@@ -1800,17 +1969,6 @@
-     }
-     readonly property bool hovered: moduleHover.hovered
-     readonly property bool dragSource: root.barDragSource === slot
--    readonly property bool panelOpen: root.activePopout === slot.activeItem
--    // Modules bigger than the mark they want (a text label in a padded slot,
--    // a multi-line stack on a vertical bar) can say how long the open-panel
--    // dot should be along the bar, so it tracks what the module paints
--    // instead of a fraction of whatever slot it happens to fill.
--    readonly property real panelIndicatorExtent: {
--      var key = root.vertical ? "openPanelIndicatorHeight" : "openPanelIndicatorWidth"
--      var hint = activeItem && key in activeItem ? activeItem[key] : undefined
--      if (hint !== undefined && hint !== null && hint > 0) return Math.round(hint)
--      return Math.max(Style.space(10), Math.round((root.vertical ? slot.height : slot.width) * 0.55))
--    }
-     implicitWidth: activeItem && activeItem.visible ? (root.vertical ? root.barSize : activeItem.implicitWidth) : 0
-     implicitHeight: activeItem && activeItem.visible ? activeItem.implicitHeight : 0
-     width: implicitWidth
-@@ -1825,6 +1983,27 @@
+ 
++    // hamid: the center pill wraps begin list, box and end list, minus the
++    // trailing run of widgets that paint their own island (privacy).
++    IslandSurface {
++      readonly property real contentStart: root.vertical
++        ? (beginList.height > 0 ? beginList.y : centerBox.y)
++        : (beginList.width > 0 ? beginList.x : centerBox.x)
++      readonly property real contentEnd: root.vertical
++        ? (endList.height > 0 ? endList.y + endList.height : centerBox.y + centerBox.height)
++        : (endList.width > 0 ? endList.x + endList.width : centerBox.x + centerBox.width)
++      readonly property real ownIslandRun: root.trailingOwnIslandExtent(endList)
++      readonly property real pillEnd: ownIslandRun > 0
++        ? Math.min(contentEnd, (root.vertical ? endList.y + endList.height : endList.x + endList.width) - ownIslandRun)
++        : contentEnd
++
++      visible: sections.active && pillEnd > contentStart
++      panelOpen: !!root.activePopout && root.activePopout.ownIsland !== true
++        && root.itemWithin(root.activePopout, sections)
++      x: root.vertical ? 0 : Math.round(contentStart) - root.islandPadding
++      y: root.vertical ? Math.round(contentStart) - root.islandPadding : 0
++      width: root.vertical ? root.barSize : Math.round(pillEnd - contentStart) + root.islandPadding * 2
++      height: root.vertical ? Math.round(pillEnd - contentStart) + root.islandPadding * 2 : root.barSize
++    }
++
+     ModuleList {
+       id: beginList
+       keys: sections.active ? root.layoutWidgets.sections.centerBegin : []
+@@ -2962,6 +3106,27 @@
  
      HoverHandler { id: moduleHover }
  
@@ -428,41 +348,42 @@
 +      Behavior on opacity { NumberAnimation { duration: 140; easing.type: Easing.OutCubic } }
 +    }
 +
-     BorderSurface {
-       visible: slot.dragSource
-       anchors.fill: parent
-@@ -1871,34 +2050,6 @@
+     // The widget at its own size. Lifted out by a drag, it folds away with
+     // its room.
+     Item {
+@@ -2996,35 +3161,6 @@
+         y: root.vertical ? section.y : Math.round((parent.height - across) / 2)
+         z: 40
        }
+-
+-      Rectangle {
+-        id: openPanelIndicator
+-
+-        readonly property int inset: Style.space(2)
+-
+-        visible: opacity > 0
+-        opacity: slot.panelOpen && !slot.dragSource ? 0.9 : 0
+-        color: Commons.Color.accent
+-        radius: Math.min(width, height) / 2
+-        width: root.vertical ? Style.space(2) : slot.panelIndicatorExtent
+-        height: root.vertical ? slot.panelIndicatorExtent : Style.space(2)
+-        // The mark sits on the module's inner edge — the one facing the
+-        // desktop — so it underlines a top bar, overlines a bottom one, and
+-        // points inward from a left or right one. It reads as pointing at the
+-        // panel that opens on that side.
+-        // Snap toward the start of the slot, matching native glyph rendering.
+-        x: root.vertical
+-          ? (root.position === "left" ? parent.width - width - inset : inset)
+-          : Math.floor(slot.panelIndicatorCenter - width / 2)
+-        y: root.vertical
+-          ? Math.floor(slot.panelIndicatorCenter - height / 2)
+-          : (root.position === "top" ? parent.height - height - inset : inset)
+-        z: 50
+-
+-        Behavior on opacity {
+-          NumberAnimation { duration: Style.duration(120); easing.type: Easing.OutCubic }
+-        }
+-      }
      }
  
--    Rectangle {
--      id: openPanelIndicator
--
--      readonly property int inset: Style.space(2)
--
--      visible: opacity > 0
--      opacity: slot.panelOpen && !slot.dragSource ? 0.9 : 0
--      color: Color.accent
--      radius: Math.min(width, height) / 2
--      width: root.vertical ? Style.space(2) : slot.panelIndicatorExtent
--      height: root.vertical ? slot.panelIndicatorExtent : Style.space(2)
--      // The mark sits on the module's inner edge — the one facing the
--      // desktop — so it underlines a top bar, overlines a bottom one, and
--      // points inward from a left or right one. It reads as pointing at the
--      // panel that opens on that side.
--      x: root.vertical
--        ? (root.position === "left" ? parent.width - width - inset : inset)
--        : Math.round((parent.width - width) / 2)
--      y: root.vertical
--        ? Math.round((parent.height - height) / 2)
--        : (root.position === "top" ? parent.height - height - inset : inset)
--      z: 50
--
--      Behavior on opacity {
--        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
--      }
--    }
--
-     MouseArea {
-       id: modulePointer
- 
+     // The tray section's widgets, drawn inside the tray's drawer. They are
