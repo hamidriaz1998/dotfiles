@@ -16,5 +16,5 @@ hl.monitor({ output = "", mode = "preferred", position = "auto", scale = omarchy
 -- hamid.monitor:layout start (written by the Display panel)
 hl.monitor({ output = "DVI-I-3", mode = "1920x1080@60.00000", position = "0x0", scale = 1 })
 hl.monitor({ output = "eDP-1", mode = "1920x1080@60.05100", position = "1920x0", scale = 1 })
-hl.monitor({ output = "DVI-I-2", mode = "1920x1080@60.00000", position = "3840x0", scale = 1 })
+hl.monitor({ output = "DVI-I-2", mode = "1280x720@60.00000", position = "3840x0", scale = 1 })
 -- hamid.monitor:layout end

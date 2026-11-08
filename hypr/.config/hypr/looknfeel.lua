@@ -262,3 +262,12 @@ hl.animation({ leaf = "borderangle", enabled = true, speed = 12, bezier = "defau
 -- hl.animation({ leaf = "layersOut", enabled = true, speed = 4, bezier = "insane" })
 -- hl.animation({ leaf = "border", enabled = true, speed = 10, bezier = "default" })
 -- hl.animation({ leaf = "borderangle", enabled = true, speed = 16, bezier = "default" })
+
+-- Opt another application in to Omarchy's standard transparency.
+-- Find its class with: hyprctl clients
+-- o.transparent_window("my-app")
+-- o.transparent_window("my-app", "0.9 0.85") -- Custom active/inactive opacity.
+
+-- No window animations on the laggy USB (evdi) displays. Hyprland has no
+-- per-monitor animation switch, so match their workspace blocks (11-30).
+hl.window_rule({ match = { workspace = "^(1[1-9]|2[0-9]|30)$" }, no_anim = true })
